@@ -7,12 +7,12 @@ import * as pipelines from '@aws-cdk/pipelines';
 
 class DataStack extends cdk.Stack {
 
-  public Vpc : ec2.Vpc;
-  public DyTable : dynamodb.Table;
+  public Vpc: ec2.Vpc;
+  public DyTable: dynamodb.Table;
 
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
-    this.Vpc = new ec2.Vpc(this, 'MyVpc', { 
+    this.Vpc = new ec2.Vpc(this, 'MyVpc', {
       maxAzs: 3,
       gatewayEndpoints: {
         dbEndpoint: {
@@ -79,6 +79,8 @@ class DeployStage extends cdk.Stage {
     const dataStack = new DataStack(this, `user1-data-stack`);
     const devStack = new DevServerStack(this, `user1-devserver-stack`, dataStack);
     devStack.addDependency(dataStack);
+    const dev2Stack = new DevServerStack(this, `user2-devserver-stack`, dataStack);
+    dev2Stack.addDependency(dataStack);
   }
 }
 
