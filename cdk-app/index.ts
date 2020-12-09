@@ -13,7 +13,7 @@ class DataStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
     this.Vpc = new ec2.Vpc(this, 'MyVpc', {
-      maxAzs: 3,
+      maxAzs: 2,
       gatewayEndpoints: {
         dbEndpoint: {
           service: ec2.GatewayVpcEndpointAwsService.DYNAMODB,
@@ -70,6 +70,7 @@ class DevServerStack extends cdk.Stack {
       'su ec2-user -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash"',
       'su ec2-user -c ". ~/.nvm/nvm.sh && nvm install 14.15.1"',
     );
+    data.DyTable.grantFullAccess(devserver);
   }
 }
 
@@ -79,8 +80,6 @@ class DeployStage extends cdk.Stage {
     const dataStack = new DataStack(this, `user1-data-stack`);
     const devStack = new DevServerStack(this, `user1-devserver-stack`, dataStack);
     devStack.addDependency(dataStack);
-    const dev2Stack = new DevServerStack(this, `user2-devserver-stack`, dataStack);
-    dev2Stack.addDependency(dataStack);
   }
 }
 
