@@ -91,10 +91,10 @@ class PipelineStack extends cdk.Stack {
     const cdkOutputArtifact = new codepipeline.Artifact();
 
     const pipeline = new pipelines.CdkPipeline(this, 'CdkPipeline', {
-      pipelineName: 'cdk-cdkpipeline',
+      pipelineName: 'aws-cdk-sample',
       cloudAssemblyArtifact: cdkOutputArtifact,
       sourceAction: new codepipeline_actions.GitHubSourceAction({
-        actionName: 'aws-cdk-sample-pipeline',
+        actionName: 'Download aws-cdk-sample',
         owner: 'quincycs',
         repo: 'aws-cdk-sample',
         oauthToken: cdk.SecretValue.secretsManager('/github.com/quincycs'),
