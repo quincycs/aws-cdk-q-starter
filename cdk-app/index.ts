@@ -92,7 +92,6 @@ class PipelineStack extends cdk.Stack {
     const pipeline = new pipelines.CdkPipeline(this, 'CdkPipeline', {
       pipelineName: 'cdk-cdkpipeline',
       cloudAssemblyArtifact: cdkOutputArtifact,
-
       sourceAction: new codepipeline_actions.GitHubSourceAction({
         actionName: 'aws-cdk-sample-pipeline',
         owner: 'quincycs',
@@ -100,11 +99,13 @@ class PipelineStack extends cdk.Stack {
         oauthToken: cdk.SecretValue.secretsManager('/github.com/quincycs'),
         output: sourceArtifact,
       }),
-
       synthAction: pipelines.SimpleSynthAction.standardNpmSynth({
         sourceArtifact: sourceArtifact,
         cloudAssemblyArtifact: cdkOutputArtifact,
         subdirectory: 'cdk-app',
+        installCommand: 'npm ci',
+        buildCommand: 'npm run build',
+        synthCommand: 'npm run synth'
       }),
     });
     const localStage = new DeployStage(this, 'AppDeploy');

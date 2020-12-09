@@ -5,9 +5,9 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "deploy": "npm run build && npm run bootstrap && cdk deploy --require-approval=never *-stack",
+    "deploy": "npm run build && npm run bootstrap && cdk deploy --require-approval=never",
     "bootstrap": "cdk bootstrap",
-    "synth": "npm run build && cdk synthesize *-stack"
+    "synth": "npm run build && cdk synthesize"
   },
   "author": {
     "name": "Quincy Mitchell",
