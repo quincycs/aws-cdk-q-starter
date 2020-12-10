@@ -24,6 +24,17 @@ class DataStack extends cdk.Stack {
     super(scope, id, props);
     this.Vpc = new ec2.Vpc(this, 'MyVpc', {
       maxAzs: 2,
+      cidr: '192.168.0.0/22',
+      subnetConfiguration: [
+        {
+          name: 'Public',
+          subnetType: ec2.SubnetType.PUBLIC,
+        },
+        {
+          name: 'Private',
+          subnetType: ec2.SubnetType.PRIVATE
+        },
+      ],
       gatewayEndpoints: {
         dbEndpoint: {
           service: ec2.GatewayVpcEndpointAwsService.DYNAMODB,
