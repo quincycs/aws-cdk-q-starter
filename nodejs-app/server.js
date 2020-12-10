@@ -7,7 +7,6 @@ const DynamoDB = require('aws-sdk/clients/dynamodb');
  * Environment variables usages
  */
 const PORT = parseInt(process.env.PORT);
-const HOST = process.env.HOST;
 const REGION = process.env.AWS_DEFAULT_REGION;
 const dbTable = process.env.dbTableName;
 
