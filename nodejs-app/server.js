@@ -40,6 +40,6 @@ app.get('/', (req, res) => {
   // });
 });
 
-app.listen(PORT, HOST, () => {
+app.listen(PORT, () => {
   console.log(`Listening on ${PORT}`);
 });

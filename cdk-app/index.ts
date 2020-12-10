@@ -114,7 +114,6 @@ class FargateStack extends cdk.Stack {
         environment: {
           dbTableName: table.tableName,
           PORT: '80',
-          HOST: '0.0.0.0',
           AWS_DEFAULT_REGION: DEFAULT_REGION
         }
       },
