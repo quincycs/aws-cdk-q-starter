@@ -124,6 +124,7 @@ class FargateStack extends cdk.Stack {
       cpu: 256,
       memoryLimitMiB: 1024,
       publicLoadBalancer: true,
+      healthCheckGracePeriod: cdk.Duration.seconds(10),
     });
 
     const scaling = fargateService.service.autoScaleTaskCount({ maxCapacity: 2 });
@@ -146,6 +147,11 @@ class FargateStack extends cdk.Stack {
       // 'change' numbers before as percentages instead of capacity counts.
       adjustmentType: AdjustmentType.CHANGE_IN_CAPACITY
     });
+    fargateService.targetGroup.setAttribute("deregistration_delay.timeout_seconds", "30");
+    fargateService.targetGroup.configureHealthCheck({
+      enabled: true,
+      path: '/_health',
+    })
 
     data.DyTable.grantFullAccess(fargateService.taskDefinition.executionRole!!.grantPrincipal);
 
