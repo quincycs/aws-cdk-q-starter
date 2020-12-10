@@ -236,7 +236,6 @@ class PipelineStack extends cdk.Stack {
         },
         build: {
           commands: [
-            'cd nodejs-app',
             'echo Build started on `date`',
             'echo Building the Docker image...',
             `docker build -t ${repositoryUri}:$CODEBUILD_RESOLVED_SOURCE_VERSION .`,
@@ -244,7 +243,6 @@ class PipelineStack extends cdk.Stack {
         },
         post_build: {
           commands: [
-            'cd nodejs-app',
             'echo Build completed on `date`',
             'echo Pushing the Docker image...',
             `docker push ${repositoryUri}:$CODEBUILD_RESOLVED_SOURCE_VERSION`,
