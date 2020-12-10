@@ -150,7 +150,7 @@ class FargateStack extends cdk.Stack {
     fargateService.targetGroup.setAttribute("deregistration_delay.timeout_seconds", "30");
     fargateService.targetGroup.configureHealthCheck({
       enabled: true,
-      path: '/_health',
+      path: '/',
     })
 
     data.DyTable.grantFullAccess(fargateService.taskDefinition.executionRole!!.grantPrincipal);
