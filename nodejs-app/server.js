@@ -6,7 +6,6 @@ const DynamoDB = require('aws-sdk/clients/dynamodb');
 /*
  * Environment variables usages
  */
-const PORT = parseInt(process.env.PORT);
 const REGION = process.env.AWS_DEFAULT_REGION;
 const dbTable = process.env.dbTableName;
 
@@ -18,27 +17,26 @@ const app = express();
 
 app.get('/', (req, res) => {
   console.log('hi!');
-  res.send('hello world');
-  // const params = {
-  //   Key: {
-  //     id: {
-  //       S: "hello world"
-  //     }
-  //   },
-  //   TableName: dbTable
-  // };
-  // db.getItem(params, (err, data) => {
-  //   if (err) {
-  //     console.log(err);
-  //     res.send('ERROR: ' + err);
-  //   }
-  //   else {
-  //     console.log(data);
-  //     res.send('SUCCESS: ' + JSON.stringify(data));
-  //   }
-  // });
+  const params = {
+    Key: {
+      id: {
+        S: "hello world"
+      }
+    },
+    TableName: dbTable
+  };
+  db.getItem(params, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.send('ERROR: ' + err);
+    }
+    else {
+      console.log(data);
+      res.send('SUCCESS: ' + JSON.stringify(data));
+    }
+  });
 });
 
-app.listen(PORT, () => {
-  console.log(`Listening on ${PORT}`);
+app.listen(8080, () => {
+  console.log(`Listening on 8080`);
 });

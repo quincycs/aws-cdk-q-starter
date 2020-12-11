@@ -1,3 +1,4 @@
 node_modules
 bin
 cdk.out
+.env

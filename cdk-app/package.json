@@ -5,10 +5,10 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "deploy": "npm run build && npm run bootstrap && cdk deploy --require-approval=never",
+    "deploy": "export $(cat .env | xargs) && npm run build && npm run bootstrap && cdk deploy --require-approval=never *-stack",
     "bootstrap": "cdk bootstrap",
-    "synth": "npm run build && cdk synthesize",
-    "diff": "npm run build && cdk diff"
+    "synth": "export $(cat .env | xargs) && npm run build && cdk synthesize *-stack",
+    "diff": "export $(cat .env | xargs) && npm run build && cdk diff"
   },
   "author": {
     "name": "Quincy Mitchell",

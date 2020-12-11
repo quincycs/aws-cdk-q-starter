@@ -4,6 +4,7 @@
         "module": "commonjs",
         "lib": ["es2016", "es2017.object", "es2017.string"],
         "outDir": "bin",
+        "sourceRoot": "src",
         "strict": true,
         "noImplicitAny": true,
         "strictNullChecks": true,
