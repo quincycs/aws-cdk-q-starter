@@ -1,17 +1,14 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
-// import * as codepipeline from '@aws-cdk/aws-codepipeline';
-// import * as codepipeline_actions from '@aws-cdk/aws-codepipeline-actions';
-// import * as pipelines from '@aws-cdk/pipelines';
-// import * as codebuild from '@aws-cdk/aws-codebuild';
 import * as ecr from '@aws-cdk/aws-ecr'
-// import * as iam from '@aws-cdk/aws-iam';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as ecs_patterns from '@aws-cdk/aws-ecs-patterns';
 
 import { AdjustmentType } from '@aws-cdk/aws-applicationautoscaling';
 import { RetentionDays } from '@aws-cdk/aws-logs';
+
+import { DEV_MODE } from './config';
 
 const DEFAULT_REGION = 'us-west-2';
 
@@ -168,9 +165,12 @@ class FargateStack extends cdk.Stack {
 }
 
 export default function platform(scope: cdk.Construct) {
-  const dataStack = new DataStack(scope, `dev-data-stack`);
-  const devStack = new DevServerStack(scope, `dev-user1-devserver-stack`, dataStack);
-  devStack.addDependency(dataStack);
-  const fargateStack = new FargateStack(scope, 'dev-fargate-stack', dataStack);
+  const dataStack = new DataStack(scope, `base-stack`);
+  const fargateStack = new FargateStack(scope, 'fargate-stack', dataStack);
   fargateStack.addDependency(dataStack);
+
+  if (DEV_MODE) {
+    const devStack = new DevServerStack(scope, `user1-devserver-stack`, dataStack);
+    devStack.addDependency(dataStack);
+  }
 }
