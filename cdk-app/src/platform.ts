@@ -36,7 +36,6 @@ class DataStack extends cdk.Stack {
         dbEndpoint: {
           service: ec2.GatewayVpcEndpointAwsService.DYNAMODB,
           subnets: [
-            { subnetType: ec2.SubnetType.PUBLIC },
             { subnetType: ec2.SubnetType.PRIVATE }
           ]
         }
