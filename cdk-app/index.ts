@@ -23,8 +23,18 @@ class DataStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
     this.Vpc = new ec2.Vpc(this, 'MyVpc', {
-      maxAzs: 3,
-      cidr: '192.168.0.0/22',
+      maxAzs: 2,
+      cidr: '10.10.0.0/22',
+      subnetConfiguration: [
+        {
+          name: 'Public',
+          subnetType: ec2.SubnetType.PUBLIC,
+        },
+        {
+          name: 'Private', 
+          subnetType: ec2.SubnetType.PRIVATE
+        },
+      ],
       gatewayEndpoints: {
         dbEndpoint: {
           service: ec2.GatewayVpcEndpointAwsService.DYNAMODB,
@@ -124,7 +134,6 @@ class FargateStack extends cdk.Stack {
       cpu: 256,
       memoryLimitMiB: 1024,
       publicLoadBalancer: true,
-      healthCheckGracePeriod: cdk.Duration.seconds(10),
     });
 
     const scaling = fargateService.service.autoScaleTaskCount({ maxCapacity: 2 });
@@ -147,7 +156,7 @@ class FargateStack extends cdk.Stack {
       // 'change' numbers before as percentages instead of capacity counts.
       adjustmentType: AdjustmentType.CHANGE_IN_CAPACITY
     });
-    fargateService.targetGroup.setAttribute("deregistration_delay.timeout_seconds", "30");
+    fargateService.targetGroup.setAttribute("deregistration_delay.timeout_seconds", "600");
     fargateService.targetGroup.configureHealthCheck({
       enabled: true,
       path: '/',
@@ -180,6 +189,7 @@ class PipelineStack extends cdk.Stack {
     const sourceArtifact = new codepipeline.Artifact();
     const cdkOutputArtifact = new codepipeline.Artifact();
     const pipeline = new pipelines.CdkPipeline(this, 'CdkPipeline', {
+      crossAccountKeys: false,
       pipelineName: 'aws-cdk-sample',
       cloudAssemblyArtifact: cdkOutputArtifact,
       sourceAction: new codepipeline_actions.GitHubSourceAction({
