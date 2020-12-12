@@ -7,6 +7,6 @@ const app = new cdk.App();
 if (DEV_MODE) {
   platform(app);
 } else {
-  new PipelineStack(app, 'pipeline-stack');
+  new PipelineStack(app, 'aws-cdk-sample-pipeline-stack');
 }
 app.synth();
