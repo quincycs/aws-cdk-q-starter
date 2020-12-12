@@ -8,7 +8,7 @@ import * as ecs_patterns from '@aws-cdk/aws-ecs-patterns';
 import { AdjustmentType } from '@aws-cdk/aws-applicationautoscaling';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 
-import { DEV_MODE } from './config';
+import { DEV_MODE, ECR_IMAGE_TAG } from './config';
 
 const DEFAULT_REGION = 'us-west-2';
 
@@ -107,7 +107,6 @@ class FargateStack extends cdk.Stack {
     });
 
     const repository = ecr.Repository.fromRepositoryName(this, 'Repository', 'aws-cdk-sample/app');
-    const imageTag = process.env.CODEBUILD_RESOLVED_SOURCE_VERSION || 'local';
 
     // Create Fargate Service
     const fargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(
@@ -116,7 +115,7 @@ class FargateStack extends cdk.Stack {
       taskImageOptions: {
         enableLogging: true,
         logDriver,
-        image: ecs.ContainerImage.fromEcrRepository(repository, imageTag),
+        image: ecs.ContainerImage.fromEcrRepository(repository, ECR_IMAGE_TAG),
         containerPort: 8080,
         environment: {
           dbTableName: table.tableName,
