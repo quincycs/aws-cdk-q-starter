@@ -1,14 +1,13 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
-import * as ecr from '@aws-cdk/aws-ecr'
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as ecs_patterns from '@aws-cdk/aws-ecs-patterns';
 
 import { AdjustmentType } from '@aws-cdk/aws-applicationautoscaling';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 
-import { DEV_MODE, ECR_IMAGE_TAG } from './config';
+import { DEV_MODE } from './config';
 
 const DEFAULT_REGION = 'us-west-2';
 
@@ -92,7 +91,7 @@ class DevServerStack extends cdk.Stack {
 }
 
 class FargateStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, data: DataStack, props?: cdk.StackProps) {
+  constructor(scope: cdk.Construct, id: string, data: DataStack, getSrc: (stack: cdk.Construct)=>ecs.ContainerImage, props?: cdk.StackProps) {
     super(scope, id, props);
     const vpc = data.Vpc;
     const table = data.DyTable;
@@ -106,8 +105,6 @@ class FargateStack extends cdk.Stack {
       logRetention: RetentionDays.ONE_WEEK
     });
 
-    const repository = ecr.Repository.fromRepositoryName(this, 'Repository', 'aws-cdk-sample/app');
-
     // Create Fargate Service
     const fargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(
       this, 'MyFargateService', {
@@ -115,7 +112,7 @@ class FargateStack extends cdk.Stack {
       taskImageOptions: {
         enableLogging: true,
         logDriver,
-        image: ecs.ContainerImage.fromEcrRepository(repository, ECR_IMAGE_TAG),
+        image: getSrc(this),
         containerPort: 8080,
         environment: {
           dbTableName: table.tableName,
@@ -162,9 +159,9 @@ class FargateStack extends cdk.Stack {
   }
 }
 
-export default function platform(scope: cdk.Construct) {
+export default function platform(scope: cdk.Construct, getAppSource: (stack: cdk.Construct)=>ecs.ContainerImage ) {
   const dataStack = new DataStack(scope, `base-stack`);
-  const fargateStack = new FargateStack(scope, 'fargate-stack', dataStack);
+  const fargateStack = new FargateStack(scope, 'fargate-stack', dataStack, getAppSource);
   fargateStack.addDependency(dataStack);
 
   if (DEV_MODE) {

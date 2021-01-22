@@ -3,15 +3,23 @@ import * as codepipeline from '@aws-cdk/aws-codepipeline';
 import * as codepipeline_actions from '@aws-cdk/aws-codepipeline-actions';
 import * as pipelines from '@aws-cdk/pipelines';
 import * as codebuild from '@aws-cdk/aws-codebuild';
-import * as ecr from '@aws-cdk/aws-ecr'
+import * as ecr from '@aws-cdk/aws-ecr';
+import * as ecs from '@aws-cdk/aws-ecs';
 import * as iam from '@aws-cdk/aws-iam';
 import platform from './platform';
 
+const ecrRepoName = 'aws-cdk-sample/app';
 
 class DeployStage extends cdk.Stage {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StageProps) {
     super(scope, id, props);
-    platform(this);
+
+    function getAppSource(stack: cdk.Construct) {
+      const repository = ecr.Repository.fromRepositoryName(stack, 'Repository', ecrRepoName);
+      return ecs.ContainerImage.fromEcrRepository(repository, process.env.CODEBUILD_RESOLVED_SOURCE_VERSION);
+    };
+
+    platform(this, getAppSource);
   }
 }
 
@@ -54,7 +62,7 @@ export default class PipelineStack extends cdk.Stack {
     //   repositoryName: 'aws-cdk-sample/app',
     //   removalPolicy: cdk.RemovalPolicy.DESTROY, // not recommended for Production
     // });
-    const repository = ecr.Repository.fromRepositoryName(this, 'Repository', 'aws-cdk-sample/app');
+    const repository = ecr.Repository.fromRepositoryName(this, 'Repository', ecrRepoName);
     const buildRole = new iam.Role(this, 'DockerBuildRole', {
       assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
     });
