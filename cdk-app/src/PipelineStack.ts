@@ -73,7 +73,7 @@ export default class PipelineStack extends cdk.Stack {
      * for each docker, make another build additional stage
      */
     const nodeAppBuildStage = pipeline.addStage('NodeAppBuild');
-    this.setupNodeJSAppBuildStage(nodeAppBuildStage, buildRole, sourceArtifact, repositoryUri);
+    this.setupDockerBuildStage(nodeAppBuildStage, buildRole, sourceArtifact, repositoryUri);
 
     /*
      * Deploy everything
@@ -82,7 +82,7 @@ export default class PipelineStack extends cdk.Stack {
     pipeline.addApplicationStage(localStage);
   }
 
-  private setupNodeJSAppBuildStage(
+  private setupDockerBuildStage(
     stage: pipelines.CdkStage,
     buildRole: iam.Role,
     source: codepipeline.Artifact,
@@ -92,7 +92,7 @@ export default class PipelineStack extends cdk.Stack {
       phases: {
         pre_build: {
           commands: [
-            'cd nodejs-app',
+            'cd java-app',
             'echo Logging in to Amazon ECR...',
             '$(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)',
           ]
