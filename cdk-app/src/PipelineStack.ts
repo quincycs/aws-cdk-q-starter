@@ -86,7 +86,10 @@ export default class PipelineStack extends cdk.Stack {
     stage: pipelines.CdkStage,
     buildRole: iam.Role,
     source: codepipeline.Artifact,
-    repositoryUri: string) {
+    repositoryUri: string)
+  {
+    const dockerUser = cdk.SecretValue.secretsManager('dockerhub/username');
+    const dockerPwd = cdk.SecretValue.secretsManager('dockerhub/password');
     const buildSpec = codebuild.BuildSpec.fromObject({
       version: '0.2',
       phases: {
@@ -95,6 +98,8 @@ export default class PipelineStack extends cdk.Stack {
             'cd java-app',
             'echo Logging in to Amazon ECR...',
             '$(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)',
+            'echo Logging in to DockerHub...',
+            `docker login -u ${dockerUser} -p ${dockerPwd}`
           ]
         },
         build: {
