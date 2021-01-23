@@ -54,8 +54,7 @@ export default class PipelineStack extends cdk.Stack {
     });
 
     /*
-     * make an ecr repo to perform builds inside.
-     * TMK, you can have 1 repo for multiple builds.
+     * make an ecr repo to place the built container
      */
     // here's how to create a repo
     // const repository = new ecr.Repository(this, 'Repository', {
@@ -70,10 +69,10 @@ export default class PipelineStack extends cdk.Stack {
     const { repositoryUri } = repository;
 
     /*
-     * for each docker, make another build additional stage
+     * for each docker, make additional build stage
      */
-    const nodeAppBuildStage = pipeline.addStage('NodeAppBuild');
-    this.setupDockerBuildStage(nodeAppBuildStage, buildRole, sourceArtifact, repositoryUri);
+    const dockerBuildStage = pipeline.addStage('DockerBuild');
+    this.setupDockerBuildStage("nodejs-app", dockerBuildStage, buildRole, sourceArtifact, repositoryUri);
 
     /*
      * Deploy everything
@@ -83,6 +82,7 @@ export default class PipelineStack extends cdk.Stack {
   }
 
   private setupDockerBuildStage(
+    dockerFolder: string,
     stage: pipelines.CdkStage,
     buildRole: iam.Role,
     source: codepipeline.Artifact,
@@ -95,7 +95,7 @@ export default class PipelineStack extends cdk.Stack {
       phases: {
         pre_build: {
           commands: [
-            'cd java-app',
+            `cd ${dockerFolder}`,
             'echo Logging in to Amazon ECR...',
             '$(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)',
             'echo Logging in to DockerHub...',
