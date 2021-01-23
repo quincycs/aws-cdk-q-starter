@@ -34,12 +34,12 @@ export default class PipelineStack extends cdk.Stack {
     const cdkOutputArtifact = new codepipeline.Artifact();
     const pipeline = new pipelines.CdkPipeline(this, 'CdkPipeline', {
       crossAccountKeys: false,
-      pipelineName: 'aws-cdk-sample',
+      pipelineName: 'aws-cdk-q-starter',
       cloudAssemblyArtifact: cdkOutputArtifact,
       sourceAction: new codepipeline_actions.GitHubSourceAction({
-        actionName: 'src-aws-cdk-sample',
+        actionName: 'src-aws-cdk-q-starter',
         owner: 'quincycs',
-        repo: 'aws-cdk-sample',
+        repo: 'aws-cdk-q-starter',
         oauthToken: cdk.SecretValue.secretsManager('/github.com/quincycs'),
         output: sourceArtifact,
       }),
