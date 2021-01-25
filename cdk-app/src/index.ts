@@ -7,7 +7,7 @@ import { DEV_MODE } from './config';
 
 const app = new cdk.App();
 if (DEV_MODE) {
-  platform(app, ()=>ecs.ContainerImage.fromAsset(`${__dirname}/../../java-app`));
+  platform(app, ()=>ecs.ContainerImage.fromAsset(`${__dirname}/../../nodejs-app`));
 } else {
   new PipelineStack(app, 'aws-cdk-sample-pipeline-stack');
 }
