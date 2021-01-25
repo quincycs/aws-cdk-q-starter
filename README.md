@@ -2,7 +2,7 @@
 
 AWS, Clusters, LoadBalancing, AutoScaling, Containers, Infrastructure as Code, oh my!
 
-AWS CDK brings all the various AWS services together into something managable by small teams. This project is a quick example of how you can use the CDK to build a simple hello world API.  Without changes, the API is using the nodejs-app/ codebase hosted in fargate with a public application load balancer.  You can make a simple change to use the java-app/ codebase instead.  (just find/replace on "nodejs-app" to change the two referenced locations)
+AWS CDK brings all the various AWS services together into something managable by small teams. This project is a quick example of how you can use the CDK to build a simple hello world API.  Without changes, the API is using the nodejs-app/ codebase hosted in fargate with a public application load balancer.  You can use the java-app/ codebase instead with only needing to change the folder path reference. (find/replace on "nodejs-app" / "java-app")
 
 # DEV_MODE = true
 
