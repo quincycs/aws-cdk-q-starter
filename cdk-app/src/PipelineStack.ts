@@ -23,10 +23,9 @@ class DeployStage extends cdk.Stage {
   }
 }
 
-export type PipelineStackProps = cdk.StackProps & 
-  {
-    fargateAppSrcDir : string
-  };
+interface PipelineStackProps extends cdk.StackProps {
+  fargateAppSrcDir : string
+};
 
 export default class PipelineStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: PipelineStackProps) {
