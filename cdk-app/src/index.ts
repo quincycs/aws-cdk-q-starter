@@ -6,9 +6,11 @@ import platform from './platform';
 import { DEV_MODE } from './config';
 
 const app = new cdk.App();
+const fargateAppSrcDir = 'nodejs-app';
+
 if (DEV_MODE) {
-  platform(app, ()=>ecs.ContainerImage.fromAsset(`${__dirname}/../../nodejs-app`));
+  platform(app, ()=>ecs.ContainerImage.fromAsset(`${__dirname}/../../${fargateAppSrcDir}`));
 } else {
-  new PipelineStack(app, 'aws-cdk-sample-pipeline-stack');
+  new PipelineStack(app, 'aws-cdk-sample-pipeline-stack', {fargateAppSrcDir});
 }
 app.synth();

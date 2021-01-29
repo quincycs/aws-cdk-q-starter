@@ -23,9 +23,14 @@ class DeployStage extends cdk.Stage {
   }
 }
 
+export type PipelineStackProps = cdk.StackProps & 
+  {
+    fargateAppSrcDir : string
+  };
+
 export default class PipelineStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+  constructor(scope: cdk.Construct, id: string, props: PipelineStackProps) {
+    super(scope, id, props as cdk.StackProps);
 
     /*
      * setup self mutating pipeline for /cdk-app
@@ -72,7 +77,7 @@ export default class PipelineStack extends cdk.Stack {
      * for each docker, make additional build stage
      */
     const dockerBuildStage = pipeline.addStage('DockerBuild');
-    this.setupDockerBuildStage("nodejs-app", dockerBuildStage, buildRole, sourceArtifact, repositoryUri);
+    this.setupDockerBuildStage(props.fargateAppSrcDir, dockerBuildStage, buildRole, sourceArtifact, repositoryUri);
 
     /*
      * Deploy everything
