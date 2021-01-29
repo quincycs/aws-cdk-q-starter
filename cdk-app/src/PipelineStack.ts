@@ -6,6 +6,7 @@ import * as codebuild from '@aws-cdk/aws-codebuild';
 import * as ecr from '@aws-cdk/aws-ecr';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as iam from '@aws-cdk/aws-iam';
+
 import platform from './platform';
 
 const ecrRepoName = 'aws-cdk-sample/app';
@@ -41,7 +42,7 @@ export default class PipelineStack extends cdk.Stack {
       pipelineName: 'aws-cdk-q-starter',
       cloudAssemblyArtifact: cdkOutputArtifact,
       sourceAction: new codepipeline_actions.GitHubSourceAction({
-        actionName: 'src-aws-cdk-q-starter',
+        actionName: 'aws-cdk-q-starter-src-download',
         owner: 'quincycs',
         repo: 'aws-cdk-q-starter',
         oauthToken: cdk.SecretValue.secretsManager('/github.com/quincycs'),
@@ -50,6 +51,10 @@ export default class PipelineStack extends cdk.Stack {
       synthAction: pipelines.SimpleSynthAction.standardNpmSynth({
         sourceArtifact: sourceArtifact,
         cloudAssemblyArtifact: cdkOutputArtifact,
+        environmentVariables: {
+          "DEV_MODE": {value: "false"},
+          "ENV_NAME": {value: "prod"}
+        },
         subdirectory: 'cdk-app',
         installCommand: 'npm ci',
         buildCommand: 'npm run build',
@@ -63,7 +68,6 @@ export default class PipelineStack extends cdk.Stack {
     // here's how to create a repo
     // const repository = new ecr.Repository(this, 'Repository', {
     //   repositoryName: 'aws-cdk-sample/app',
-    //   removalPolicy: cdk.RemovalPolicy.DESTROY, // not recommended for Production
     // });
     const repository = ecr.Repository.fromRepositoryName(this, 'Repository', ecrRepoName);
     const buildRole = new iam.Role(this, 'DockerBuildRole', {
@@ -81,7 +85,7 @@ export default class PipelineStack extends cdk.Stack {
     /*
      * Deploy everything
      */
-    const localStage = new DeployStage(this, 'prod-aws-cdk-sample');
+    const localStage = new DeployStage(this, 'deploy-aws-cdk-sample');
     pipeline.addApplicationStage(localStage);
   }
 
