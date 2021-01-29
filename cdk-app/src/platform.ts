@@ -7,7 +7,7 @@ import * as ecs_patterns from '@aws-cdk/aws-ecs-patterns';
 import { AdjustmentType } from '@aws-cdk/aws-applicationautoscaling';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 
-import { DEV_MODE } from './config';
+import { DEV_MODE, ENV_NAME, RemovalPolicy } from './config';
 
 const DEFAULT_REGION = 'us-west-2';
 
@@ -43,10 +43,7 @@ class DataStack extends cdk.Stack {
     this.DyTable = new dynamodb.Table(this, 'Table', {
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      // The default removal policy is RETAIN, which means that cdk destroy will not attempt to delete
-      // the new table, and it will remain in your account until manually deleted. By setting the policy to 
-      // DESTROY, cdk destroy will delete the table (even if it has data in it)
-      removalPolicy: cdk.RemovalPolicy.DESTROY, // NOT recommended for production code
+      removalPolicy: RemovalPolicy
     });
     new cdk.CfnOutput(this, 'DynamoDB-TableName', { value: this.DyTable.tableName });
   }
@@ -160,8 +157,8 @@ class FargateStack extends cdk.Stack {
 }
 
 export default function platform(scope: cdk.Construct, getAppSource: (stack: cdk.Construct)=>ecs.ContainerImage ) {
-  const dataStack = new DataStack(scope, `base-stack`);
-  const fargateStack = new FargateStack(scope, 'fargate-stack', dataStack, getAppSource);
+  const dataStack = new DataStack(scope, `${ENV_NAME}-base-stack`);
+  const fargateStack = new FargateStack(scope, `${ENV_NAME}-fargate-stack`, dataStack, getAppSource);
   fargateStack.addDependency(dataStack);
 
   if (DEV_MODE) {
