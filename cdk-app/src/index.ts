@@ -11,6 +11,6 @@ const fargateAppSrcDir = 'nodejs-app';
 if (DEV_MODE) {
   platform(app, ()=>ecs.ContainerImage.fromAsset(`${__dirname}/../../${fargateAppSrcDir}`));
 } else {
-  new PipelineStack(app, 'aws-cdk-sample-pipeline-stack', {fargateAppSrcDir});
+  new PipelineStack(app, 'prod-aws-cdk-sample-pipeline-stack', {fargateAppSrcDir});
 }
 app.synth();

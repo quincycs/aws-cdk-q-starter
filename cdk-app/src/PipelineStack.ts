@@ -85,7 +85,7 @@ export default class PipelineStack extends cdk.Stack {
     /*
      * Deploy everything
      */
-    const localStage = new DeployStage(this, 'deploy-aws-cdk-sample');
+    const localStage = new DeployStage(this, 'prod-aws-cdk-sample/');
     pipeline.addApplicationStage(localStage);
   }
 
