@@ -27,6 +27,8 @@
     "@aws-cdk/aws-ecs": "*",
     "@aws-cdk/aws-ecs-patterns": "*",
     "@aws-cdk/aws-elasticloadbalancingv2": "*",
+    "@aws-cdk/aws-apigatewayv2": "1.87.1",
+    "@aws-cdk/aws-apigatewayv2-integrations": "1.87.1",
     "@aws-cdk/core": "*",
     "@aws-cdk/aws-codepipeline": "*",
     "@aws-cdk/aws-codepipeline-actions": "*",

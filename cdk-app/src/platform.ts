@@ -3,6 +3,8 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as ecs_patterns from '@aws-cdk/aws-ecs-patterns';
+import * as apigw from '@aws-cdk/aws-apigatewayv2';
+import * as apigw_integrations from '@aws-cdk/aws-apigatewayv2-integrations';
 
 import { AdjustmentType } from '@aws-cdk/aws-applicationautoscaling';
 import { RetentionDays } from '@aws-cdk/aws-logs';
@@ -121,7 +123,7 @@ class FargateStack extends cdk.Stack {
       maxHealthyPercent: 200,
       cpu: 256,
       memoryLimitMiB: 1024,
-      publicLoadBalancer: true,
+      publicLoadBalancer: false,
     });
 
     const scaling = fargateService.service.autoScaleTaskCount({ maxCapacity: 2 });
@@ -152,7 +154,13 @@ class FargateStack extends cdk.Stack {
 
     data.DyTable.grantFullAccess(fargateService.taskDefinition.taskRole);
 
-    new cdk.CfnOutput(this, 'LoadBalancerDNS', { value: fargateService.loadBalancer.loadBalancerDnsName });
+    const gateway = new apigw.HttpApi(this, 'ApiGateway', {
+      defaultIntegration: new apigw_integrations.HttpAlbIntegration({
+        listener: fargateService.listener
+      }),
+      apiName: `${this.stackName}-ApiGateway`
+    });
+    new cdk.CfnOutput(this, 'ApiEndpoint', { value: gateway.apiEndpoint });
   }
 }
 
