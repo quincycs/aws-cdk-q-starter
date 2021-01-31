@@ -9,7 +9,7 @@ import * as apigw_integrations from '@aws-cdk/aws-apigatewayv2-integrations';
 import { AdjustmentType } from '@aws-cdk/aws-applicationautoscaling';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 
-import { DEV_MODE, ENV_NAME, RemovalPolicy } from './config';
+import { DEV_MODE, RemovalPolicy } from './config';
 
 const DEFAULT_REGION = 'us-west-2';
 
@@ -164,9 +164,9 @@ class FargateStack extends cdk.Stack {
   }
 }
 
-export default function platform(scope: cdk.Construct, getAppSource: (stack: cdk.Construct)=>ecs.ContainerImage ) {
-  const dataStack = new DataStack(scope, `${ENV_NAME}-base`);
-  const fargateStack = new FargateStack(scope, `${ENV_NAME}-fargate`, dataStack, getAppSource);
+export default function platform(scope: cdk.Construct, stackPrefix: string, getAppSource: (stack: cdk.Construct)=>ecs.ContainerImage ) {
+  const dataStack = new DataStack(scope, `${stackPrefix}-base`);
+  const fargateStack = new FargateStack(scope, `${stackPrefix}-fargate`, dataStack, getAppSource);
   fargateStack.addDependency(dataStack);
 
   if (DEV_MODE) {

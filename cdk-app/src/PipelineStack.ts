@@ -9,7 +9,6 @@ import * as iam from '@aws-cdk/aws-iam';
 import * as s3 from '@aws-cdk/aws-s3';
 
 import platform from './platform';
-import { RemovalPolicy } from './config';
 import { CdkPipeline } from './lib/CdkPipeline';
 
 const ecrRepoName = 'aws-cdk-sample/app';
@@ -23,7 +22,7 @@ class DeployStage extends cdk.Stage {
       return ecs.ContainerImage.fromEcrRepository(repository, process.env.CODEBUILD_RESOLVED_SOURCE_VERSION);
     };
 
-    platform(this, getAppSource);
+    platform(this, '', getAppSource);
   }
 }
 
@@ -39,7 +38,7 @@ export default class PipelineStack extends cdk.Stack {
       autoDeleteObjects: true,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
-      removalPolicy: RemovalPolicy
+      removalPolicy: cdk.RemovalPolicy.DESTROY
     });
 
     /*
@@ -96,7 +95,7 @@ export default class PipelineStack extends cdk.Stack {
     /*
      * Deploy everything
      */
-    const localStage = new DeployStage(this, 'prod-cdksample--');
+    const localStage = new DeployStage(this, 'prod-cdksample-');
     pipeline.addApplicationStage(localStage);
   }
 
