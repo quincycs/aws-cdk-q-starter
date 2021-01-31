@@ -5,10 +5,10 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "deploy": "export $(cat .env | xargs) && npm run build && npm run bootstrap && cdk deploy --require-approval=never *-stack",
+    "deploy": "export $(cat .env | xargs) && npm run build && npm run bootstrap && cdk deploy --require-approval=never --all",
     "bootstrap": "cdk bootstrap",
-    "synth": "export $(cat .env | xargs) && npm run build && cdk synthesize *-stack",
-    "diff": "export $(cat .env | xargs) && npm run build && cdk diff"
+    "synth": "export $(cat .env | xargs) && npm run build && cdk synthesize --all",
+    "diff": "export $(cat .env | xargs) && npm run build && cdk diff --all"
   },
   "author": {
     "name": "Quincy Mitchell",
@@ -32,6 +32,7 @@
     "@aws-cdk/core": "*",
     "@aws-cdk/aws-codepipeline": "*",
     "@aws-cdk/aws-codepipeline-actions": "*",
-    "@aws-cdk/pipelines": "*"
+    "@aws-cdk/pipelines": "*",
+    "@aws-cdk/aws-s3": "*"
   }
 }

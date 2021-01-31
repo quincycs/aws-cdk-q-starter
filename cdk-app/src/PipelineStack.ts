@@ -6,8 +6,11 @@ import * as codebuild from '@aws-cdk/aws-codebuild';
 import * as ecr from '@aws-cdk/aws-ecr';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as iam from '@aws-cdk/aws-iam';
+import * as s3 from '@aws-cdk/aws-s3';
 
 import platform from './platform';
+import { RemovalPolicy } from './config';
+import { CdkPipeline } from './lib/CdkPipeline';
 
 const ecrRepoName = 'aws-cdk-sample/app';
 
@@ -32,12 +35,20 @@ export default class PipelineStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: PipelineStackProps) {
     super(scope, id, props as cdk.StackProps);
 
+    const bucket = new s3.Bucket(this, 'ArtifactBucket', {
+      autoDeleteObjects: true,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      removalPolicy: RemovalPolicy
+    });
+
     /*
      * setup self mutating pipeline for /cdk-app
      */
     const sourceArtifact = new codepipeline.Artifact();
     const cdkOutputArtifact = new codepipeline.Artifact();
-    const pipeline = new pipelines.CdkPipeline(this, 'CdkPipeline', {
+    const pipeline = new CdkPipeline(this, 'CdkPipeline', {
+      artifactBucket: bucket,
       crossAccountKeys: false,
       pipelineName: 'aws-cdk-q-starter',
       cloudAssemblyArtifact: cdkOutputArtifact,
@@ -85,7 +96,7 @@ export default class PipelineStack extends cdk.Stack {
     /*
      * Deploy everything
      */
-    const localStage = new DeployStage(this, 'prod-cdk-sample');
+    const localStage = new DeployStage(this, 'prod-cdksample--');
     pipeline.addApplicationStage(localStage);
   }
 

@@ -165,8 +165,8 @@ class FargateStack extends cdk.Stack {
 }
 
 export default function platform(scope: cdk.Construct, getAppSource: (stack: cdk.Construct)=>ecs.ContainerImage ) {
-  const dataStack = new DataStack(scope, `${ENV_NAME}-base-stack`);
-  const fargateStack = new FargateStack(scope, `${ENV_NAME}-fargate-stack`, dataStack, getAppSource);
+  const dataStack = new DataStack(scope, `${ENV_NAME}-base`);
+  const fargateStack = new FargateStack(scope, `${ENV_NAME}-fargate`, dataStack, getAppSource);
   fargateStack.addDependency(dataStack);
 
   if (DEV_MODE) {
