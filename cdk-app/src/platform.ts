@@ -3,13 +3,13 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as ecs_patterns from '@aws-cdk/aws-ecs-patterns';
-import * as apigw from '@aws-cdk/aws-apigatewayv2';
-import * as apigw_integrations from '@aws-cdk/aws-apigatewayv2-integrations';
+import * as apigw from '@aws-cdk/aws-apigateway';
 
 import { AdjustmentType } from '@aws-cdk/aws-applicationautoscaling';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 
 import { DEV_MODE, RemovalPolicy } from './config';
+import { Protocol } from '@aws-cdk/aws-elasticloadbalancingv2';
 
 const DEFAULT_REGION = 'us-west-2';
 
@@ -104,15 +104,16 @@ class FargateStack extends cdk.Stack {
       logRetention: RetentionDays.ONE_WEEK
     });
 
+    const containerPort = 8080;
     // Create Fargate Service
-    const fargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(
+    const fargateService = new ecs_patterns.NetworkLoadBalancedFargateService(
       this, 'MyFargateService', {
       cluster,
       taskImageOptions: {
         enableLogging: true,
         logDriver,
         image: getSrc(this),
-        containerPort: 8080,
+        containerPort,
         environment: {
           dbTableName: table.tableName,
           AWS_DEFAULT_REGION: DEFAULT_REGION
@@ -125,6 +126,7 @@ class FargateStack extends cdk.Stack {
       memoryLimitMiB: 1024,
       publicLoadBalancer: false,
     });
+    fargateService.service.connections.allowFromAnyIpv4(ec2.Port.tcp(containerPort));
 
     const scaling = fargateService.service.autoScaleTaskCount({ maxCapacity: 2 });
     /*
@@ -148,19 +150,36 @@ class FargateStack extends cdk.Stack {
     });
     fargateService.targetGroup.setAttribute("deregistration_delay.timeout_seconds", "600");
     fargateService.targetGroup.configureHealthCheck({
-      enabled: true,
-      path: '/',
-    })
+      protocol: Protocol.TCP,
+      enabled: true
+    });
 
     data.DyTable.grantFullAccess(fargateService.taskDefinition.taskRole);
 
-    const gateway = new apigw.HttpApi(this, 'ApiGateway', {
-      defaultIntegration: new apigw_integrations.HttpAlbIntegration({
-        listener: fargateService.listener
-      }),
-      apiName: `${this.stackName}-ApiGateway`
+    const vpcLink = new apigw.VpcLink(this, 'VpcLink', {
+      targets: [fargateService.loadBalancer]
     });
-    new cdk.CfnOutput(this, 'ApiEndpoint', { value: gateway.apiEndpoint });
+    const integration = new apigw.Integration({
+      type: apigw.IntegrationType.HTTP_PROXY,
+      integrationHttpMethod: 'ANY',
+      options: {
+        connectionType: apigw.ConnectionType.VPC_LINK,
+        vpcLink,
+      }
+    });
+    const gateway = new apigw.RestApi(this, `${this.stackName}-ApiGateway`, {
+      endpointTypes: [ apigw.EndpointType.EDGE ],
+      deployOptions: { // options for default stage
+        methodOptions: {
+          '/*/*': { // all resource paths & methods
+            throttlingBurstLimit: 10,
+            throttlingRateLimit: 1,
+          }
+        }
+      }
+    });
+    gateway.root.addMethod('ANY', integration);
+    new cdk.CfnOutput(this, 'ApiEndpoint', { value: gateway.url });
   }
 }
 
