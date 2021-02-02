@@ -157,7 +157,8 @@ class FargateStack extends cdk.Stack {
     data.DyTable.grantFullAccess(fargateService.taskDefinition.taskRole);
 
     const vpcLink = new apigw.VpcLink(this, 'VpcLink', {
-      targets: [fargateService.loadBalancer]
+      targets: [fargateService.loadBalancer],
+      vpcLinkName: `${this.stackName}-VpcLink`
     });
     const integration = new apigw.Integration({
       type: apigw.IntegrationType.HTTP_PROXY,
