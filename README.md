@@ -6,7 +6,7 @@ AWS CDK brings all the various AWS services together into something managable by
 
 # DEV_MODE = true
 
-DEV_MODE=true allows you to deploy your changes from your local machine.
+DEV_MODE=true allows you to deploy your changes from your local machine.  It also deploys a bastion host inside your VPC.
 
 **Setup:**
 
