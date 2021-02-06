@@ -8,7 +8,7 @@ AWS CDK brings all the various AWS services together into something managable by
 
 # DEV_MODE = true
 
-DEV_MODE=true allows you to deploy your changes from your local machine.  It also deploys a bastion host inside your VPC.
+DEV_MODE=true allows you to deploy your changes from your local machine.  It also deploys a bastion host inside your VPC.  The purpose of dev mode is to let you change anything about your infrastructure on your own defined environment.  This gives you confidence that your changes will deploy correctly in produdction because you're able to deploy /master in your own environment, then deploy your changes without issue.
 
 **Setup:**
 
@@ -16,6 +16,7 @@ DEV_MODE=true allows you to deploy your changes from your local machine.  It als
 
 ```
 DEV_MODE=true
+ENV_NAME=dev
 ```
 
 2. Create ec2 key pair named 'user1-key-pair'
