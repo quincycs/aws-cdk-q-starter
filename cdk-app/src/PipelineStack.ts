@@ -10,15 +10,18 @@ import * as s3 from '@aws-cdk/aws-s3';
 
 import platform from './platform';
 import { CdkPipeline } from './lib/CdkPipeline';
+import { GITHUB_OWNER, GITHUB_REPO, SECRET_MANAGER_GITHUB_AUTH, RemovalPolicy } from './config';
 
-const ecrRepoName = 'aws-cdk-sample/app';
+interface DeployStageProps extends cdk.StageProps {
+  ecrRepo : ecr.Repository
+};
 
 class DeployStage extends cdk.Stage {
-  constructor(scope: cdk.Construct, id: string, props?: cdk.StageProps) {
+  constructor(scope: cdk.Construct, id: string, props: DeployStageProps) {
     super(scope, id, props);
 
     function getAppSource(stack: cdk.Construct) {
-      const repository = ecr.Repository.fromRepositoryName(stack, 'Repository', ecrRepoName);
+      const repository = ecr.Repository.fromRepositoryName(stack, 'Repository', props.ecrRepo.repositoryName);
       return ecs.ContainerImage.fromEcrRepository(repository, process.env.CODEBUILD_RESOLVED_SOURCE_VERSION);
     };
 
@@ -53,9 +56,9 @@ export default class PipelineStack extends cdk.Stack {
       cloudAssemblyArtifact: cdkOutputArtifact,
       sourceAction: new codepipeline_actions.GitHubSourceAction({
         actionName: 'aws-cdk-q-starter-src-download',
-        owner: 'quincycs',
-        repo: 'aws-cdk-q-starter',
-        oauthToken: cdk.SecretValue.secretsManager('/github.com/quincycs'),
+        owner: GITHUB_OWNER,
+        repo: GITHUB_REPO,
+        oauthToken: cdk.SecretValue.secretsManager(SECRET_MANAGER_GITHUB_AUTH),
         output: sourceArtifact,
       }),
       synthAction: pipelines.SimpleSynthAction.standardNpmSynth({
@@ -75,11 +78,9 @@ export default class PipelineStack extends cdk.Stack {
     /*
      * make an ecr repo to place the built container
      */
-    // here's how to create a repo
-    // const repository = new ecr.Repository(this, 'Repository', {
-    //   repositoryName: 'aws-cdk-sample/app',
-    // });
-    const repository = ecr.Repository.fromRepositoryName(this, 'Repository', ecrRepoName);
+    const repository = new ecr.Repository(this, 'Repository', {
+      removalPolicy: RemovalPolicy
+    });
     const buildRole = new iam.Role(this, 'DockerBuildRole', {
       assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
     });
@@ -95,7 +96,9 @@ export default class PipelineStack extends cdk.Stack {
     /*
      * Deploy everything
      */
-    const localStage = new DeployStage(this, 'prod-cdksample');
+    const localStage = new DeployStage(this, 'prod-cdksample', {
+      ecrRepo: repository
+    });
     pipeline.addApplicationStage(localStage);
   }
 

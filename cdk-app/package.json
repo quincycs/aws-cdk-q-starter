@@ -1,14 +1,14 @@
 {
-  "name": "fargate-service-with-auto-scaling",
+  "name": "cdk-q-starter",
   "version": "1.0.0",
-  "description": "ECS Service of launch type FARGATE with Application Auto Scaling",
+  "description": "",
   "private": true,
   "scripts": {
     "build": "tsc",
-    "deploy": "export $(cat .env | xargs) && npm run build && npm run bootstrap && cdk deploy --require-approval=never --all",
+    "deploy": "npm run build && npm run bootstrap && cdk deploy --require-approval=never --all",
     "bootstrap": "cdk bootstrap",
-    "synth": "export $(cat .env | xargs) && npm run build && cdk synthesize --all",
-    "diff": "export $(cat .env | xargs) && npm run build && cdk diff --all"
+    "synth": "npm run build && cdk synthesize --all",
+    "diff": "npm run build && cdk diff --all"
   },
   "author": {
     "name": "Quincy Mitchell",

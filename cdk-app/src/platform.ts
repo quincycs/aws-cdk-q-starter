@@ -8,7 +8,7 @@ import * as apigw from '@aws-cdk/aws-apigateway';
 import { AdjustmentType } from '@aws-cdk/aws-applicationautoscaling';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 
-import { DEV_MODE, RemovalPolicy } from './config';
+import { DEV_MODE, EC2_KEY_PAIR, APIGW_API, APIGW_ROOT, RemovalPolicy } from './config';
 import { Protocol } from '@aws-cdk/aws-elasticloadbalancingv2';
 
 const DEFAULT_REGION = 'us-west-2';
@@ -59,7 +59,7 @@ class DevServerStack extends cdk.Stack {
       vpc,
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3A, ec2.InstanceSize.MEDIUM),
       machineImage: new ec2.AmazonLinuxImage({ generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2 }),
-      keyName: 'user1-key-pair', // Existing resource outside of CDK deployment
+      keyName: EC2_KEY_PAIR,
       vpcSubnets: {
         subnetType: ec2.SubnetType.PUBLIC
       }
@@ -168,19 +168,17 @@ class FargateStack extends cdk.Stack {
         vpcLink,
       }
     });
-    const gateway = new apigw.RestApi(this, `${this.stackName}-ApiGateway`, {
-      endpointTypes: [ apigw.EndpointType.EDGE ],
-      deployOptions: { // options for default stage
-        methodOptions: {
-          '/*/*': { // all resource paths & methods
-            throttlingBurstLimit: 10,
-            throttlingRateLimit: 1,
-          }
-        }
+    const gateway = apigw.RestApi.fromRestApiAttributes(this, `${this.stackName}-ApiGateway`, {
+      restApiId: APIGW_API,
+      rootResourceId: APIGW_ROOT
+    });
+    const latest = gateway.root.addResource(`${this.stackName}-latest`, {
+      defaultIntegration: integration,
+      defaultMethodOptions: {
+        apiKeyRequired: true
       }
     });
-    gateway.root.addMethod('ANY', integration);
-    new cdk.CfnOutput(this, 'ApiEndpoint', { value: gateway.url });
+    latest.addMethod('ANY');
   }
 }
 

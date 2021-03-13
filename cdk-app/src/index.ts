@@ -3,14 +3,13 @@ import * as ecs from '@aws-cdk/aws-ecs';
 
 import PipelineStack from './PipelineStack';
 import platform from './platform';
-import { DEV_MODE, ENV_NAME } from './config';
+import { DEV_MODE, ENV_NAME, API_SRC_DIR } from './config';
 
 const app = new cdk.App();
-const fargateAppSrcDir = 'nodejs-app';
 
 if (DEV_MODE) {
-  platform(app, ENV_NAME, ()=>ecs.ContainerImage.fromAsset(`${__dirname}/../../${fargateAppSrcDir}`));
+  platform(app, ENV_NAME, ()=>ecs.ContainerImage.fromAsset(`${__dirname}/../../${API_SRC_DIR}`));
 } else {
-  new PipelineStack(app, 'prod-cdksample--pipeline-stack', {fargateAppSrcDir});
+  new PipelineStack(app, 'prod-cdksample--pipeline-stack', {fargateAppSrcDir: API_SRC_DIR});
 }
 app.synth();
