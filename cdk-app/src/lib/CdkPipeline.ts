@@ -1,3 +1,7 @@
+/*
+ * This file can be deleted once this PR is merged into aws-cdk : https://github.com/aws/aws-cdk/pull/12794
+ */
+
 import * as path from 'path';
 import * as codepipeline from '@aws-cdk/aws-codepipeline';
 import * as ec2 from '@aws-cdk/aws-ec2';
