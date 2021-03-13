@@ -2,9 +2,7 @@
 
 AWS, Clusters, LoadBalancing, AutoScaling, Containers, Infrastructure as Code, Blue/Green Deployments, Partial Roll Out Deployments, oh my!
 
-AWS CDK brings all the various AWS services together into something managable by small & large teams. This project is a quick example of how you can use the CDK to build a simple hello world API.
-
-This project is a quick example of how you can use the CDK to build a API to query DyDB.  
+AWS CDK brings all the various AWS services together into something managable by small & large teams. This project is a quick example of how you can use the CDK to build a API to query DyDB.  
 
 ![diagram](https://user-images.githubusercontent.com/2924643/107100595-bd7b6480-67c9-11eb-898b-a0c1e07a73c5.png)
 
