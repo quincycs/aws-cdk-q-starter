@@ -14,6 +14,7 @@ const APIGW_ROOT = 's9nh9eauli';
 const GITHUB_OWNER = 'quincycs';
 const GITHUB_REPO = 'aws-cdk-q-starter';
 const SECRET_MANAGER_GITHUB_AUTH = '/github.com/quincycs';
+const ECR_REPO = 'aws-cdk-q-starter/app';
 
 
 export { 
@@ -26,5 +27,6 @@ export {
     GITHUB_OWNER,
     GITHUB_REPO,
     SECRET_MANAGER_GITHUB_AUTH,
+    ECR_REPO,
     RemovalPolicy
 };
