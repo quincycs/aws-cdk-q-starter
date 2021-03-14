@@ -2,7 +2,7 @@ import * as cdk from '@aws-cdk/core';
 
 // deployment options
 const DEV_MODE = false;
-const ENV_NAME = 'prod-blue';
+const ENV_NAME = 'prod';
 const API_SRC_DIR = 'nodejs-app';
 const RemovalPolicy = cdk.RemovalPolicy.DESTROY; // replace with below,
 // DEV_MODE ? cdk.RemovalPolicy.DESTROY : cdk.RemovalPolicy.RETAIN;
