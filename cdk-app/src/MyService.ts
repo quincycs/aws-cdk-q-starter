@@ -2,13 +2,14 @@ import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as ecs from '@aws-cdk/aws-ecs';
+import * as ecr from '@aws-cdk/aws-ecr';
 import * as ecs_patterns from '@aws-cdk/aws-ecs-patterns';
 import * as apigw from '@aws-cdk/aws-apigateway';
 
 import { AdjustmentType } from '@aws-cdk/aws-applicationautoscaling';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 
-import { DEV_MODE, EC2_KEY_PAIR, APIGW_API, APIGW_ROOT, RemovalPolicy } from './config';
+import { EC2_KEY_PAIR, APIGW_API, APIGW_ROOT, RemovalPolicy } from './config';
 import { Protocol } from '@aws-cdk/aws-elasticloadbalancingv2';
 
 const DEFAULT_REGION = 'us-west-2';
@@ -89,11 +90,16 @@ class DevServerStack extends cdk.Stack {
   }
 }
 
+interface FargateStackProps extends cdk.StackProps {
+  vpc: ec2.Vpc;
+  dyTable: dynamodb.Table;
+  localAssetPath?: string;
+  ecrRepoName?: string;
+}
 class FargateStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, data: DataStack, getSrc: (stack: cdk.Construct)=>ecs.ContainerImage, props?: cdk.StackProps) {
+  constructor(scope: cdk.Construct, id: string, props: FargateStackProps) {
     super(scope, id, props);
-    const vpc = data.Vpc;
-    const table = data.DyTable;
+    const {vpc, dyTable, localAssetPath, ecrRepoName} = props;
 
     // Create a cluster
     const cluster = new ecs.Cluster(this, 'MyCluster', { vpc });
@@ -104,6 +110,17 @@ class FargateStack extends cdk.Stack {
       logRetention: RetentionDays.ONE_WEEK
     });
 
+    // container image
+    let codeImage: ecs.ContainerImage;
+    if (ecrRepoName) {
+      const repository = ecr.Repository.fromRepositoryName(this, 'Repository', ecrRepoName);
+      codeImage = ecs.ContainerImage.fromEcrRepository(repository, process.env.CODEBUILD_RESOLVED_SOURCE_VERSION);
+    } else if (localAssetPath) {
+      codeImage = ecs.ContainerImage.fromAsset(localAssetPath);
+    } else {
+      throw new Error('ecr repo name or local asset path required');
+    }
+
     const containerPort = 8080;
     // Create Fargate Service
     const fargateService = new ecs_patterns.NetworkLoadBalancedFargateService(
@@ -112,10 +129,10 @@ class FargateStack extends cdk.Stack {
       taskImageOptions: {
         enableLogging: true,
         logDriver,
-        image: getSrc(this),
+        image: codeImage,
         containerPort,
         environment: {
-          dbTableName: table.tableName,
+          dbTableName: dyTable.tableName,
           AWS_DEFAULT_REGION: DEFAULT_REGION
         }
       },
@@ -154,7 +171,7 @@ class FargateStack extends cdk.Stack {
       enabled: true
     });
 
-    data.DyTable.grantFullAccess(fargateService.taskDefinition.taskRole);
+    dyTable.grantFullAccess(fargateService.taskDefinition.taskRole);
 
     const vpcLink = new apigw.VpcLink(this, 'VpcLink', {
       targets: [fargateService.loadBalancer],
@@ -182,13 +199,31 @@ class FargateStack extends cdk.Stack {
   }
 }
 
-export default function platform(scope: cdk.Construct, stackPrefix: string, getAppSource: (stack: cdk.Construct)=>ecs.ContainerImage ) {
-  const dataStack = new DataStack(scope, `${stackPrefix}-base`);
-  const fargateStack = new FargateStack(scope, `${stackPrefix}-fargate`, dataStack, getAppSource);
-  fargateStack.addDependency(dataStack);
+interface EnvProps {
+  isProd: boolean;
+  stackPrefix: string;
+  localAssetPath?: string;
+  ecrRepoName?: string;
+}
 
-  if (DEV_MODE) {
-    const devStack = new DevServerStack(scope, `user1-devserver-stack`, dataStack);
-    devStack.addDependency(dataStack);
+export default class MyService extends cdk.Construct {
+  constructor(scope: cdk.Construct, id: string, props: EnvProps) {
+    super(scope, id);
+    const { isProd, stackPrefix, localAssetPath, ecrRepoName } = props;
+
+    const dataStack = new DataStack(scope, `${stackPrefix}-base`);
+
+    const fargateStack = new FargateStack(scope, `${stackPrefix}-fargate`, {
+      vpc: dataStack.Vpc,
+      dyTable: dataStack.DyTable,
+      localAssetPath,
+      ecrRepoName
+    });
+    fargateStack.addDependency(dataStack);
+
+    if (!isProd) {
+      const devStack = new DevServerStack(scope, `${stackPrefix}-user1-devserver-stack`, dataStack);
+      devStack.addDependency(dataStack);
+    }
   }
 }
