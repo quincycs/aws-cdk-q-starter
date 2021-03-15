@@ -52,15 +52,21 @@ class DataStack extends cdk.Stack {
   }
 }
 
+interface DevServerStackProps extends cdk.StackProps {
+  vpc: ec2.Vpc;
+  dyTable: dynamodb.Table;
+  keyPairName: string;
+}
+
 class DevServerStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, data: DataStack, props?: cdk.StackProps) {
+  constructor(scope: cdk.Construct, id: string, props: DevServerStackProps) {
     super(scope, id, props);
-    const vpc = data.Vpc;
+    const vpc = props.vpc;
     const devserver = new ec2.Instance(this, 'Instance', {
       vpc,
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3A, ec2.InstanceSize.MEDIUM),
       machineImage: new ec2.AmazonLinuxImage({ generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2 }),
-      keyName: EC2_KEY_PAIR,
+      keyName: props.keyPairName,
       vpcSubnets: {
         subnetType: ec2.SubnetType.PUBLIC
       }
@@ -86,7 +92,7 @@ class DevServerStack extends cdk.Stack {
       'su ec2-user -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash"',
       'su ec2-user -c ". ~/.nvm/nvm.sh && nvm install 14.15.1"',
     );
-    data.DyTable.grantFullAccess(devserver);
+    props.dyTable.grantFullAccess(devserver);
   }
 }
 
@@ -202,6 +208,7 @@ class FargateStack extends cdk.Stack {
 interface EnvProps {
   isProd: boolean;
   stackPrefix: string;
+  computeStackPrefix: string;
   localAssetPath?: string;
   ecrRepoName?: string;
 }
@@ -209,11 +216,11 @@ interface EnvProps {
 export default class MyService extends cdk.Construct {
   constructor(scope: cdk.Construct, id: string, props: EnvProps) {
     super(scope, id);
-    const { isProd, stackPrefix, localAssetPath, ecrRepoName } = props;
+    const { isProd, stackPrefix, localAssetPath, ecrRepoName, computeStackPrefix } = props;
 
     const dataStack = new DataStack(scope, `${stackPrefix}-base`);
 
-    const fargateStack = new FargateStack(scope, `${stackPrefix}-fargate`, {
+    const fargateStack = new FargateStack(scope, `${stackPrefix}-${computeStackPrefix}-fargate`, {
       vpc: dataStack.Vpc,
       dyTable: dataStack.DyTable,
       localAssetPath,
@@ -222,7 +229,11 @@ export default class MyService extends cdk.Construct {
     fargateStack.addDependency(dataStack);
 
     if (!isProd) {
-      const devStack = new DevServerStack(scope, `${stackPrefix}-user1-devserver-stack`, dataStack);
+      const devStack = new DevServerStack(scope, `${stackPrefix}-user1-devserver-stack`, {
+        vpc: dataStack.Vpc,
+        dyTable: dataStack.DyTable,
+        keyPairName: EC2_KEY_PAIR
+      });
       devStack.addDependency(dataStack);
     }
   }
