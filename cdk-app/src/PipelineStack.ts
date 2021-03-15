@@ -9,7 +9,7 @@ import * as s3 from '@aws-cdk/aws-s3';
 
 import MyService from './MyService';
 import { CdkPipeline } from './lib/CdkPipeline';
-import { ENV_NAME, COMPUTE_ENV_NAME, GITHUB_OWNER, GITHUB_REPO, RemovalPolicy, SECRET_MANAGER_GITHUB_AUTH } from './config';
+import { ENV_NAME, COMPUTE_ENV_NAME, GITHUB_OWNER, GITHUB_REPO, SECRET_MANAGER_GITHUB_AUTH } from './config';
 
 const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/${COMPUTE_ENV_NAME}/app`;
 
@@ -75,7 +75,7 @@ export default class PipelineStack extends cdk.Stack {
 
     const repository = new ecr.Repository(this, 'Repository', {
       repositoryName: ecrRepoName,
-      removalPolicy: RemovalPolicy
+      removalPolicy: cdk.RemovalPolicy.RETAIN // destroy would only work if you had a mechanism for emptying it also.
     });
     const buildRole = new iam.Role(this, 'DockerBuildRole', {
       assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
@@ -86,13 +86,13 @@ export default class PipelineStack extends cdk.Stack {
     /*
      * for each docker, make additional build stage
      */
-    const dockerBuildStage = pipeline.addStage('DockerBuild');
+    const dockerBuildStage = pipeline.addStage('docker-build-stage');
     this.setupDockerBuildStage(props.fargateAppSrcDir, dockerBuildStage, buildRole, sourceArtifact, repositoryUri);
 
     /*
      * Deploy everything
      */
-    const deployStage = new DeployStage(this, 'prod-cdksample', {});
+    const deployStage = new DeployStage(this, 'deploy-stage', {});
     pipeline.addApplicationStage(deployStage);
   }
 

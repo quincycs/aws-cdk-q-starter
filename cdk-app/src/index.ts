@@ -15,6 +15,6 @@ if (DEV_MODE) {
     ecrRepoName: ''
   });
 } else {
-  new PipelineStack(app, 'prod-cdksample--pipeline-stack', {fargateAppSrcDir: API_SRC_DIR});
+  new PipelineStack(app, 'pipeline-stack', {fargateAppSrcDir: API_SRC_DIR});
 }
 app.synth();
