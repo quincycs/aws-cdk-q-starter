@@ -9,7 +9,7 @@ import * as s3 from '@aws-cdk/aws-s3';
 
 import MyService from './MyService';
 import { CdkPipeline } from './lib/CdkPipeline';
-import { ENV_NAME, GITHUB_OWNER, GITHUB_REPO, RemovalPolicy, SECRET_MANAGER_GITHUB_AUTH } from './config';
+import { ENV_NAME, COMPUTE_ENV_NAME, GITHUB_OWNER, GITHUB_REPO, RemovalPolicy, SECRET_MANAGER_GITHUB_AUTH } from './config';
 
 const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/app`;
 
@@ -20,6 +20,7 @@ class DeployStage extends cdk.Stage {
     new MyService(this, 'MyServiceApp', {
       isProd: true,
       stackPrefix: ENV_NAME,
+      computeStackPrefix: COMPUTE_ENV_NAME,
       ecrRepoName: ecrRepoName,
       localAssetPath: ''
     });
