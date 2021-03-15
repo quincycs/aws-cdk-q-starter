@@ -4,6 +4,7 @@ import * as cdk from '@aws-cdk/core';
 const DEV_MODE = false;
 const ENV_NAME = 'prod';
 const COMPUTE_ENV_NAME = 'green';
+const APP_NAME = 'my-api';
 const API_SRC_DIR = 'nodejs-app';
 const RemovalPolicy = cdk.RemovalPolicy.DESTROY; // replace with below,
 // DEV_MODE ? cdk.RemovalPolicy.DESTROY : cdk.RemovalPolicy.RETAIN;
@@ -20,6 +21,7 @@ export {
     DEV_MODE,
     ENV_NAME,
     COMPUTE_ENV_NAME,
+    APP_NAME,
     API_SRC_DIR,
     EC2_KEY_PAIR,
     APIGW_API,

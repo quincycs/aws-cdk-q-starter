@@ -9,7 +9,7 @@ import * as s3 from '@aws-cdk/aws-s3';
 
 import MyService from './MyService';
 import { CdkPipeline } from './lib/CdkPipeline';
-import { ENV_NAME, COMPUTE_ENV_NAME, GITHUB_OWNER, GITHUB_REPO, SECRET_MANAGER_GITHUB_AUTH } from './config';
+import { ENV_NAME, COMPUTE_ENV_NAME, APP_NAME, GITHUB_OWNER, GITHUB_REPO, SECRET_MANAGER_GITHUB_AUTH } from './config';
 
 const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/${COMPUTE_ENV_NAME}/app`;
 
@@ -92,7 +92,7 @@ export default class PipelineStack extends cdk.Stack {
     /*
      * Deploy everything
      */
-    const deployStage = new DeployStage(this, 'deploy-stage', {});
+    const deployStage = new DeployStage(this, APP_NAME, {});
     pipeline.addApplicationStage(deployStage);
   }
 
