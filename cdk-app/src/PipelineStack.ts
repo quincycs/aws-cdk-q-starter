@@ -13,16 +13,22 @@ import { ENV_NAME, COMPUTE_ENV_NAME, APP_NAME, GITHUB_OWNER, GITHUB_REPO, SECRET
 
 const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/${COMPUTE_ENV_NAME}/app`;
 
+interface DeployStageProps extends cdk.StageProps {
+  tags?: { [key: string]: string; };
+}
+
 class DeployStage extends cdk.Stage {
-  constructor(scope: cdk.Construct, id: string, props: cdk.StageProps) {
+  constructor(scope: cdk.Construct, id: string, props: DeployStageProps) {
     super(scope, id, props);
+    const {tags} = props;
 
     new MyService(this, 'MyServiceApp', {
       isProd: true,
       stackPrefix: ENV_NAME,
       computeStackPrefix: COMPUTE_ENV_NAME,
       ecrRepoName: ecrRepoName,
-      localAssetPath: ''
+      localAssetPath: '',
+      tags
     });
   }
 }
@@ -33,7 +39,8 @@ interface PipelineStackProps extends cdk.StackProps {
 
 export default class PipelineStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: PipelineStackProps) {
-    super(scope, id, props as cdk.StackProps);
+    super(scope, id, props);
+    const {tags} = props;
 
     const bucket = new s3.Bucket(this, 'ArtifactBucket', {
       autoDeleteObjects: true,
@@ -92,7 +99,7 @@ export default class PipelineStack extends cdk.Stack {
     /*
      * Deploy everything
      */
-    const deployStage = new DeployStage(this, APP_NAME, {});
+    const deployStage = new DeployStage(this, APP_NAME, {tags});
     pipeline.addApplicationStage(deployStage);
   }
 

@@ -6,6 +6,10 @@ import { DEV_MODE, ENV_NAME, COMPUTE_ENV_NAME, API_SRC_DIR } from './config';
 
 const app = new cdk.App();
 
+const tags = {
+  "product":"cdk-q-starter"
+};
+
 if (DEV_MODE) {
   new MyService(app, 'MyServiceApp', {
     isProd: false,
@@ -15,6 +19,9 @@ if (DEV_MODE) {
     ecrRepoName: ''
   });
 } else {
-  new PipelineStack(app, 'pipeline-stack', {fargateAppSrcDir: API_SRC_DIR});
+  new PipelineStack(app, 'pipeline-stack', {
+    fargateAppSrcDir: API_SRC_DIR,
+    tags
+  });
 }
 app.synth();
