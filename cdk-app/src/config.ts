@@ -3,7 +3,7 @@ import * as cdk from '@aws-cdk/core';
 // deployment options
 const DEV_MODE = false;
 const ENV_NAME = 'prod';
-const COMPUTE_ENV_NAME = 'green';
+const COMPUTE_ENV_NAME = 'blue';
 const APP_NAME = 'my-api';
 const API_SRC_DIR = 'nodejs-app';
 const RemovalPolicy = cdk.RemovalPolicy.DESTROY; // replace with below,
