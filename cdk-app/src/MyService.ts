@@ -24,7 +24,7 @@ class DataStack extends cdk.Stack {
     this.Vpc = new ec2.Vpc(this, 'MyVpc', {
       maxAzs: 2,
       natGateways: 0,
-      cidr: '10.10.0.0/22',
+      cidr: '10.20.0.0/22',
       subnetConfiguration: [
         {
           name: 'Public',
