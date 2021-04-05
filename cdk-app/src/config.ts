@@ -7,6 +7,7 @@ const COMPUTE_ENV_NAME = 'green';
 const APP_NAME = 'my-api';
 const API_SRC_DIR = 'nodejs-app';
 const DEFAULT_REGION = 'us-west-2';
+const DEFAULT_NAT_IMAGE = 'ami-088e9a766f5a47026';
 const RemovalPolicy = cdk.RemovalPolicy.DESTROY; // replace with below,
 // DEV_MODE ? cdk.RemovalPolicy.DESTROY : cdk.RemovalPolicy.RETAIN;
 
@@ -41,5 +42,6 @@ export {
     SECRET_MANAGER_DOCKER_PWD,
     CDK_DEFAULT_ACCOUNT,
     DEFAULT_REGION,
+    DEFAULT_NAT_IMAGE,
     RemovalPolicy
 };

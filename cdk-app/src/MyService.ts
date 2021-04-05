@@ -9,7 +9,7 @@ import * as apigw from '@aws-cdk/aws-apigateway';
 import { AdjustmentType } from '@aws-cdk/aws-applicationautoscaling';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 
-import { EC2_KEY_PAIR, APIGW_API, APIGW_ROOT, DEFAULT_REGION, RemovalPolicy } from './config';
+import { EC2_KEY_PAIR, APIGW_API, APIGW_ROOT, DEFAULT_REGION, DEFAULT_NAT_IMAGE, RemovalPolicy } from './config';
 import { Protocol } from '@aws-cdk/aws-elasticloadbalancingv2';
 import { BaseStack } from './BaseStack';
 
@@ -25,7 +25,10 @@ class DataStack extends BaseStack {
       natGateways: 1,
       natGatewayProvider: ec2.NatProvider.instance({
         instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3A, ec2.InstanceSize.NANO),
-        keyName: EC2_KEY_PAIR
+        machineImage: new ec2.GenericLinuxImage({
+          DEFAULT_REGION: DEFAULT_NAT_IMAGE
+        }),
+        keyName: EC2_KEY_PAIR,
       }),
       cidr: '10.10.0.0/22',
       subnetConfiguration: [
