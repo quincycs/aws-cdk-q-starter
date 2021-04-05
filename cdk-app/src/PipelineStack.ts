@@ -6,10 +6,12 @@ import * as codebuild from '@aws-cdk/aws-codebuild';
 import * as ecr from '@aws-cdk/aws-ecr';
 import * as iam from '@aws-cdk/aws-iam';
 import * as s3 from '@aws-cdk/aws-s3';
+// import { CdkPipeline } from '@aws-cdk/pipelines';
 
-import MyService from './MyService';
 import { CdkPipeline } from './lib/CdkPipeline';
-import { ENV_NAME, COMPUTE_ENV_NAME, APP_NAME, GITHUB_OWNER, GITHUB_REPO, SECRET_MANAGER_GITHUB_AUTH } from './config';
+import MyService from './MyService';
+import { ENV_NAME, COMPUTE_ENV_NAME, APP_NAME, GITHUB_OWNER, GITHUB_REPO, SECRET_MANAGER_GITHUB_AUTH, SECRET_MANAGER_DOCKER_USER, SECRET_MANAGER_DOCKER_PWD, CDK_DEFAULT_ACCOUNT } from './config';
+import { BaseStack } from './BaseStack';
 
 const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/${COMPUTE_ENV_NAME}/app`;
 
@@ -37,7 +39,7 @@ interface PipelineStackProps extends cdk.StackProps {
   fargateAppSrcDir : string
 };
 
-export default class PipelineStack extends cdk.Stack {
+export default class PipelineStack extends BaseStack {
   constructor(scope: cdk.Construct, id: string, props: PipelineStackProps) {
     super(scope, id, props);
     const {tags} = props;
@@ -70,8 +72,7 @@ export default class PipelineStack extends cdk.Stack {
         sourceArtifact: sourceArtifact,
         cloudAssemblyArtifact: cdkOutputArtifact,
         environmentVariables: {
-          "DEV_MODE": {value: "false"},
-          "ENV_NAME": {value: "prod"}
+          "CDK_DEFAULT_ACCOUNT": {value: CDK_DEFAULT_ACCOUNT}
         },
         subdirectory: 'cdk-app',
         installCommand: 'npm ci',
@@ -110,8 +111,8 @@ export default class PipelineStack extends cdk.Stack {
     source: codepipeline.Artifact,
     repositoryUri: string)
   {
-    const dockerUser = cdk.SecretValue.secretsManager('dockerhub/username');
-    const dockerPwd = cdk.SecretValue.secretsManager('dockerhub/password');
+    const dockerUser = cdk.SecretValue.secretsManager(SECRET_MANAGER_DOCKER_USER);
+    const dockerPwd = cdk.SecretValue.secretsManager(SECRET_MANAGER_DOCKER_PWD);
     const buildSpec = codebuild.BuildSpec.fromObject({
       version: '0.2',
       phases: {

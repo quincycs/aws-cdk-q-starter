@@ -6,6 +6,7 @@ const ENV_NAME = 'prod';
 const COMPUTE_ENV_NAME = 'green';
 const APP_NAME = 'my-api';
 const API_SRC_DIR = 'nodejs-app';
+const DEFAULT_REGION = 'us-west-2';
 const RemovalPolicy = cdk.RemovalPolicy.DESTROY; // replace with below,
 // DEV_MODE ? cdk.RemovalPolicy.DESTROY : cdk.RemovalPolicy.RETAIN;
 
@@ -16,8 +17,15 @@ const APIGW_ROOT = 's9nh9eauli';
 const GITHUB_OWNER = 'quincycs';
 const GITHUB_REPO = 'aws-cdk-q-starter';
 const SECRET_MANAGER_GITHUB_AUTH = '/github.com/quincycs';
+const SECRET_MANAGER_DOCKER_USER = 'dockerhub/username';
+const SECRET_MANAGER_DOCKER_PWD = 'dockerhub/password';
+const CDK_DEFAULT_ACCOUNT = process.env.CDK_DEFAULT_ACCOUNT;
 
-export { 
+if(!CDK_DEFAULT_ACCOUNT) {
+    throw new Error('CDK_DEFAULT_ACCOUNT is required a environment variable. make a file named \'.env\' and define it there.');
+}
+
+export {
     DEV_MODE,
     ENV_NAME,
     COMPUTE_ENV_NAME,
@@ -29,5 +37,9 @@ export {
     GITHUB_OWNER,
     GITHUB_REPO,
     SECRET_MANAGER_GITHUB_AUTH,
+    SECRET_MANAGER_DOCKER_USER,
+    SECRET_MANAGER_DOCKER_PWD,
+    CDK_DEFAULT_ACCOUNT,
+    DEFAULT_REGION,
     RemovalPolicy
 };
