@@ -11,6 +11,7 @@ import { RetentionDays } from '@aws-cdk/aws-logs';
 
 import { EC2_KEY_PAIR, APIGW_API, APIGW_ROOT, RemovalPolicy } from './config';
 import { Protocol } from '@aws-cdk/aws-elasticloadbalancingv2';
+import { InstanceClass, InstanceSize, InstanceType, NatProvider } from '@aws-cdk/aws-ec2';
 
 const DEFAULT_REGION = 'us-west-2';
 
@@ -23,23 +24,26 @@ class DataStack extends cdk.Stack {
     super(scope, id, props);
     this.Vpc = new ec2.Vpc(this, 'MyVpc', {
       maxAzs: 2,
-      natGateways: 0,
-      cidr: '10.20.0.0/22',
+      natGateways: 1,
+      natGatewayProvider: NatProvider.instance({
+        instanceType: InstanceType.of(InstanceClass.T3A, InstanceSize.NANO)
+      }),
+      cidr: '10.10.0.0/22',
       subnetConfiguration: [
         {
           name: 'Public',
           subnetType: ec2.SubnetType.PUBLIC,
         },
         {
-          name: 'Isolated', 
-          subnetType: ec2.SubnetType.ISOLATED
+          name: 'Private', 
+          subnetType: ec2.SubnetType.PRIVATE
         },
       ],
       gatewayEndpoints: {
         dbEndpoint: {
           service: ec2.GatewayVpcEndpointAwsService.DYNAMODB,
           subnets: [
-            { subnetType: ec2.SubnetType.ISOLATED }
+            { subnetType: ec2.SubnetType.PRIVATE }
           ]
         }
       },
