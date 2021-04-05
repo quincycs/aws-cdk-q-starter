@@ -20,14 +20,14 @@ class DataStack extends BaseStack {
 
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+    const natImage: {[region: string]: string} = {};
+    natImage[DEFAULT_REGION] = DEFAULT_NAT_IMAGE;
     this.Vpc = new ec2.Vpc(this, 'MyVpc', {
       maxAzs: 2,
       natGateways: 1,
       natGatewayProvider: ec2.NatProvider.instance({
         instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3A, ec2.InstanceSize.NANO),
-        machineImage: new ec2.GenericLinuxImage({
-          DEFAULT_REGION: DEFAULT_NAT_IMAGE
-        }),
+        machineImage: new ec2.GenericLinuxImage(natImage),
         keyName: EC2_KEY_PAIR,
       }),
       cidr: '10.10.0.0/22',
