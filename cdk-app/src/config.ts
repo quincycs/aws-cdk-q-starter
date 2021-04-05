@@ -20,11 +20,6 @@ const GITHUB_REPO = 'aws-cdk-q-starter';
 const SECRET_MANAGER_GITHUB_AUTH = '/github.com/quincycs';
 const SECRET_MANAGER_DOCKER_USER = 'dockerhub/username';
 const SECRET_MANAGER_DOCKER_PWD = 'dockerhub/password';
-const CDK_DEFAULT_ACCOUNT = process.env.CDK_DEFAULT_ACCOUNT;
-
-if(!CDK_DEFAULT_ACCOUNT) {
-    throw new Error('CDK_DEFAULT_ACCOUNT is required a environment variable. make a file named \'.env\' and define it there.');
-}
 
 export {
     DEV_MODE,
@@ -40,7 +35,6 @@ export {
     SECRET_MANAGER_GITHUB_AUTH,
     SECRET_MANAGER_DOCKER_USER,
     SECRET_MANAGER_DOCKER_PWD,
-    CDK_DEFAULT_ACCOUNT,
     DEFAULT_REGION,
     DEFAULT_NAT_IMAGE,
     RemovalPolicy

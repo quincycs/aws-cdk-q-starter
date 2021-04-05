@@ -1,5 +1,5 @@
 {
-  "app": "node -r dotenv/config bin/index.js",
+  "app": "node bin/index.js",
   "context": {
     "@aws-cdk/core:newStyleStackSynthesis": "true"
   }

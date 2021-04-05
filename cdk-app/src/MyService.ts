@@ -28,7 +28,7 @@ class DataStack extends BaseStack {
       natGatewayProvider: ec2.NatProvider.instance({
         instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3A, ec2.InstanceSize.NANO),
         machineImage: new ec2.GenericLinuxImage(natImage),
-        keyName: EC2_KEY_PAIR,
+        keyName: EC2_KEY_PAIR
       }),
       cidr: '10.10.0.0/22',
       subnetConfiguration: [

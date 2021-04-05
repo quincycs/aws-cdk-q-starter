@@ -10,7 +10,7 @@ import * as s3 from '@aws-cdk/aws-s3';
 
 import { CdkPipeline } from './lib/CdkPipeline';
 import MyService from './MyService';
-import { ENV_NAME, COMPUTE_ENV_NAME, APP_NAME, GITHUB_OWNER, GITHUB_REPO, SECRET_MANAGER_GITHUB_AUTH, SECRET_MANAGER_DOCKER_USER, SECRET_MANAGER_DOCKER_PWD, CDK_DEFAULT_ACCOUNT } from './config';
+import { ENV_NAME, COMPUTE_ENV_NAME, APP_NAME, GITHUB_OWNER, GITHUB_REPO, SECRET_MANAGER_GITHUB_AUTH, SECRET_MANAGER_DOCKER_USER, SECRET_MANAGER_DOCKER_PWD } from './config';
 import { BaseStack } from './BaseStack';
 
 const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/${COMPUTE_ENV_NAME}/app`;
@@ -71,9 +71,6 @@ export default class PipelineStack extends BaseStack {
       synthAction: pipelines.SimpleSynthAction.standardNpmSynth({
         sourceArtifact: sourceArtifact,
         cloudAssemblyArtifact: cdkOutputArtifact,
-        environmentVariables: {
-          "CDK_DEFAULT_ACCOUNT": {value: CDK_DEFAULT_ACCOUNT}
-        },
         subdirectory: 'cdk-app',
         installCommand: 'npm ci',
         buildCommand: 'npm run build',
