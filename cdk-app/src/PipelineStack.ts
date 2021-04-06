@@ -5,10 +5,10 @@ import * as pipelines from '@aws-cdk/pipelines';
 import * as codebuild from '@aws-cdk/aws-codebuild';
 import * as ecr from '@aws-cdk/aws-ecr';
 import * as iam from '@aws-cdk/aws-iam';
-import * as s3 from '@aws-cdk/aws-s3';
-// import { CdkPipeline } from '@aws-cdk/pipelines';
+// import * as s3 from '@aws-cdk/aws-s3';
+import { CdkPipeline } from '@aws-cdk/pipelines';
 
-import { CdkPipeline } from './lib/CdkPipeline';
+// import { CdkPipeline } from './lib/CdkPipeline';
 import MyService from './MyService';
 import { ENV_NAME, COMPUTE_ENV_NAME, APP_NAME, GITHUB_OWNER, GITHUB_REPO, SECRET_MANAGER_GITHUB_AUTH, SECRET_MANAGER_DOCKER_USER, SECRET_MANAGER_DOCKER_PWD } from './config';
 
@@ -43,12 +43,12 @@ export default class PipelineStack extends cdk.Stack {
     super(scope, id, props);
     const {tags} = props;
 
-    const bucket = new s3.Bucket(this, 'ArtifactBucket', {
-      autoDeleteObjects: true,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      removalPolicy: cdk.RemovalPolicy.DESTROY
-    });
+    // const bucket = new s3.Bucket(this, 'ArtifactBucket', {
+    //   autoDeleteObjects: true,
+    //   blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+    //   encryption: s3.BucketEncryption.S3_MANAGED,
+    //   removalPolicy: cdk.RemovalPolicy.DESTROY
+    // });
 
     /*
      * setup self mutating pipeline for /cdk-app
@@ -56,7 +56,7 @@ export default class PipelineStack extends cdk.Stack {
     const sourceArtifact = new codepipeline.Artifact();
     const cdkOutputArtifact = new codepipeline.Artifact();
     const pipeline = new CdkPipeline(this, 'CdkPipeline', {
-      artifactBucket: bucket,
+      // artifactBucket: bucket,
       crossAccountKeys: false,
       pipelineName: 'aws-cdk-q-starter',
       cloudAssemblyArtifact: cdkOutputArtifact,
