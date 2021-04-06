@@ -11,9 +11,8 @@ import { RetentionDays } from '@aws-cdk/aws-logs';
 
 import { EC2_KEY_PAIR, APIGW_API, APIGW_ROOT, DEFAULT_REGION, DEFAULT_NAT_IMAGE, RemovalPolicy } from './config';
 import { Protocol } from '@aws-cdk/aws-elasticloadbalancingv2';
-import { BaseStack } from './BaseStack';
 
-class DataStack extends BaseStack {
+class DataStack extends cdk.Stack {
 
   public Vpc: ec2.Vpc;
   public DyTable: dynamodb.Table;
@@ -65,7 +64,7 @@ interface DevServerStackProps extends cdk.StackProps {
   keyPairName: string;
 }
 
-class DevServerStack extends BaseStack {
+class DevServerStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: DevServerStackProps) {
     super(scope, id, props);
     const vpc = props.vpc;
@@ -109,7 +108,7 @@ interface FargateStackProps extends cdk.StackProps {
   localAssetPath?: string;
   ecrRepoName?: string;
 }
-class FargateStack extends BaseStack {
+class FargateStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: FargateStackProps) {
     super(scope, id, props);
     const {vpc, dyTable, localAssetPath, ecrRepoName} = props;
