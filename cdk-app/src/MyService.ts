@@ -154,6 +154,7 @@ class FargateStack extends cdk.Stack {
       cpu: 256,
       memoryLimitMiB: 1024,
       publicLoadBalancer: false,
+      circuitBreaker: {rollback: true} // dep: Dockerfile healthcheck
     });
     fargateService.service.connections.allowFromAnyIpv4(ec2.Port.tcp(containerPort));
 
