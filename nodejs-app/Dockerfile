@@ -17,7 +17,4 @@ COPY . .
 
 EXPOSE 8080
 
-HEALTHCHECK --interval=60s --timeout=3s --retries=3 \
-      CMD curl -f http://localhost:8080/unhealthy || exit 1
-
 CMD [ "node", "server.js" ]

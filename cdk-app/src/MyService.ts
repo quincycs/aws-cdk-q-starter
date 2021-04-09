@@ -3,7 +3,6 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as ecr from '@aws-cdk/aws-ecr';
-import * as ecs_patterns from '@aws-cdk/aws-ecs-patterns';
 import * as apigw from '@aws-cdk/aws-apigateway';
 
 import { AdjustmentType } from '@aws-cdk/aws-applicationautoscaling';
@@ -11,6 +10,7 @@ import { RetentionDays } from '@aws-cdk/aws-logs';
 
 import { EC2_KEY_PAIR, APIGW_API, APIGW_ROOT, DEFAULT_REGION, DEFAULT_NAT_IMAGE, RemovalPolicy } from './config';
 import { Protocol } from '@aws-cdk/aws-elasticloadbalancingv2';
+import { NetworkLoadBalancedFargateService } from './lib/network-load-balanced-fargate-service';
 
 class DataStack extends cdk.Stack {
 
@@ -135,7 +135,7 @@ class FargateStack extends cdk.Stack {
 
     const containerPort = 8080;
     // Create Fargate Service
-    const fargateService = new ecs_patterns.NetworkLoadBalancedFargateService(
+    const fargateService = new NetworkLoadBalancedFargateService(
       this, 'MyFargateService', {
       cluster,
       taskImageOptions: {
@@ -154,7 +154,11 @@ class FargateStack extends cdk.Stack {
       cpu: 256,
       memoryLimitMiB: 1024,
       publicLoadBalancer: false,
-      circuitBreaker: {rollback: true} // dep: Dockerfile healthcheck
+      circuitBreaker: {rollback: true},
+      healthCheck: {
+        command: ['CMD_SHELL', 'curl -f http://localhost:8080/unhealthypath || exit 1'],
+        startPeriod: cdk.Duration.seconds(60)
+      }
     });
     fargateService.service.connections.allowFromAnyIpv4(ec2.Port.tcp(containerPort));
 
