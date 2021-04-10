@@ -8,19 +8,23 @@ interface MyDevServerStackProps extends cdk.StackProps {
   keyPairName: string;
 }
 
+/*
+ * Defines an ec2 instance inside the VPC that can be ssh'ed into
+ *  therefore allowing access to develop inside the VPC.
+ */
 export default class MyDevServerStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: MyDevServerStackProps) {
     super(scope, id, props);
-    const vpc = props.vpc;
-    const devserver = new ec2.Instance(this, 'Instance', {
-      vpc,
-      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3A, ec2.InstanceSize.MEDIUM),
-      machineImage: new ec2.AmazonLinuxImage({ generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2 }),
-      keyName: props.keyPairName,
-      vpcSubnets: {
-        subnetType: ec2.SubnetType.PUBLIC
-      }
-    });
+    const { vpc, keyPairName } = props;
+
+    const devserver = this.genDevserverDefinition(vpc, keyPairName);
+
+    // grants
+    devserver.connections.allowFromAnyIpv4(ec2.Port.tcp(22));
+    devserver.connections.allowToAnyIpv4(ec2.Port.allTraffic());
+    props.dyTable.grantFullAccess(devserver);
+
+    // integrations
     const ip = new ec2.CfnEIP(this, 'EIP', {
       domain: "vpc"
     });
@@ -28,9 +32,20 @@ export default class MyDevServerStack extends cdk.Stack {
       instanceId: devserver.instanceId,
       allocationId: ip.attrAllocationId,
     });
-    devserver.connections.allowFromAnyIpv4(ec2.Port.tcp(22));
-    devserver.connections.allowToAnyIpv4(ec2.Port.allTraffic());
-    devserver.addUserData(
+  }
+
+  private genDevserverDefinition(vpc: ec2.Vpc, keyName: string) {
+    const instance = new ec2.Instance(this, 'Instance', {
+      vpc,
+      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3A, ec2.InstanceSize.MEDIUM),
+      machineImage: new ec2.AmazonLinuxImage({ generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2 }),
+      keyName,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC
+      }
+    });
+
+    instance.addUserData(
       'yum update -y',
       'yum install git -y',
       //docker 
@@ -42,6 +57,7 @@ export default class MyDevServerStack extends cdk.Stack {
       'su ec2-user -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash"',
       'su ec2-user -c ". ~/.nvm/nvm.sh && nvm install 14.15.1"',
     );
-    props.dyTable.grantFullAccess(devserver);
+
+    return instance;
   }
 }

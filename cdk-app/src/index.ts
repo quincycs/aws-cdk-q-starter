@@ -7,7 +7,7 @@ import { DEV_MODE, ENV_NAME, COMPUTE_ENV_NAME, API_SRC_DIR } from './config';
 const app = new cdk.App();
 
 const tags = {
-  "product":"cdk-q-starter"
+  "product": "cdk-q-starter"
 };
 
 if (DEV_MODE) {
@@ -16,7 +16,7 @@ if (DEV_MODE) {
     stackPrefix: ENV_NAME,
     computeStackPrefix: COMPUTE_ENV_NAME,
     localAssetPath: `${__dirname}/../../${API_SRC_DIR}`,
-    ecrRepoName: ''
+    tags
   });
 } else {
   new PipelineStack(app, 'pipeline-stack', {

@@ -4,6 +4,9 @@ import * as dynamodb from '@aws-cdk/aws-dynamodb';
 
 import { EC2_KEY_PAIR, DEFAULT_REGION, DEFAULT_NAT_IMAGE, RemovalPolicy } from './config';
 
+/*
+ * Defines the networking and data storage componentns
+ */
 export default class MyNetworkDataStack extends cdk.Stack {
 
   public Vpc: ec2.Vpc;
@@ -36,7 +39,7 @@ export default class MyNetworkDataStack extends cdk.Stack {
         }
       },
     });
-    this.DyTable = this.getDyTableDefinition();
+    this.DyTable = this.genDyTableDefinition();
     new cdk.CfnOutput(this, 'DynamoDB-TableName', { value: this.DyTable.tableName });
   }
 
@@ -51,7 +54,7 @@ export default class MyNetworkDataStack extends cdk.Stack {
     })
   }
 
-  private getDyTableDefinition(): dynamodb.Table {
+  private genDyTableDefinition(): dynamodb.Table {
     return new dynamodb.Table(this, 'Table', {
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,

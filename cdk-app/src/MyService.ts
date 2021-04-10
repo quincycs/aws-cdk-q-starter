@@ -14,6 +14,9 @@ interface EnvProps {
   tags?: { [key: string]: string; };
 }
 
+/*
+ * Composes the reusable stacks to define an environment.
+ */
 export default class MyService extends cdk.Construct {
   constructor(scope: cdk.Construct, id: string, props: EnvProps) {
     super(scope, id);

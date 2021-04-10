@@ -24,6 +24,9 @@ interface PipelineStackProps extends cdk.StackProps {
   fargateAppSrcDir: string
 };
 
+/*
+ * Defines an CI/CD pipeline to build, deploy MyService, and self-mutate the pipeline.
+ */
 export default class PipelineStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: PipelineStackProps) {
     super(scope, id, props);
@@ -31,7 +34,7 @@ export default class PipelineStack extends cdk.Stack {
 
     // self mutating pipeline for /cdk-app
     const sourceArtifact = new codepipeline.Artifact();
-    const pipeline = this.getPipelineDefinition(sourceArtifact);
+    const pipeline = this.genPipelineDefinition(sourceArtifact);
 
     const repository = new ecr.Repository(this, 'Repository', {
       repositoryName: ecrRepoName,
@@ -43,13 +46,13 @@ export default class PipelineStack extends cdk.Stack {
     repository.grantPullPush(buildRole);
 
     const dockerBuildStage = pipeline.addStage('docker-build-stage');
-    this.setupDockerBuildStage(fargateAppSrcDir, dockerBuildStage, buildRole, sourceArtifact, repository.repositoryUri);
+    this.setDockerBuildStage(fargateAppSrcDir, dockerBuildStage, buildRole, sourceArtifact, repository.repositoryUri);
 
     const deployStage = new DeployStage(this, APP_NAME, { tags });
     pipeline.addApplicationStage(deployStage);
   }
 
-  private getPipelineDefinition(
+  private genPipelineDefinition(
     sourceArtifact: codepipeline.Artifact
   ): CdkPipeline {
     const cdkOutputArtifact = new codepipeline.Artifact();
@@ -75,7 +78,7 @@ export default class PipelineStack extends cdk.Stack {
     });
   }
 
-  private setupDockerBuildStage(
+  private setDockerBuildStage(
     dockerFolder: string,
     stage: pipelines.CdkStage,
     buildRole: iam.Role,
