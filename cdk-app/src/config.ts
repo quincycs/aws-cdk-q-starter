@@ -11,7 +11,7 @@ const DEFAULT_NAT_IMAGE = 'ami-088e9a766f5a47026';
 const RemovalPolicy = cdk.RemovalPolicy.DESTROY; // replace with below,
 // DEV_MODE ? cdk.RemovalPolicy.DESTROY : cdk.RemovalPolicy.RETAIN;
 
-// existing aws resources
+// existing resources
 const EC2_KEY_PAIR = 'user1-key-pair';
 const APIGW_API = 'epeasxb1ue';
 const APIGW_ROOT = 's9nh9eauli';

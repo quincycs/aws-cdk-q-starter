@@ -5,58 +5,55 @@ import * as pipelines from '@aws-cdk/pipelines';
 import * as codebuild from '@aws-cdk/aws-codebuild';
 import * as ecr from '@aws-cdk/aws-ecr';
 import * as iam from '@aws-cdk/aws-iam';
-// import * as s3 from '@aws-cdk/aws-s3';
 import { CdkPipeline } from '@aws-cdk/pipelines';
 
-// import { CdkPipeline } from './lib/CdkPipeline';
 import MyService from './MyService';
-import { ENV_NAME, COMPUTE_ENV_NAME, APP_NAME, GITHUB_OWNER, GITHUB_REPO, SECRET_MANAGER_GITHUB_AUTH, SECRET_MANAGER_DOCKER_USER, SECRET_MANAGER_DOCKER_PWD } from './config';
+import {
+  ENV_NAME,
+  COMPUTE_ENV_NAME,
+  APP_NAME, GITHUB_OWNER,
+  GITHUB_REPO,
+  SECRET_MANAGER_GITHUB_AUTH,
+  SECRET_MANAGER_DOCKER_USER,
+  SECRET_MANAGER_DOCKER_PWD
+} from './config';
 
 const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/${COMPUTE_ENV_NAME}/app`;
 
-interface DeployStageProps extends cdk.StageProps {
-  tags?: { [key: string]: string; };
-}
-
-class DeployStage extends cdk.Stage {
-  constructor(scope: cdk.Construct, id: string, props: DeployStageProps) {
-    super(scope, id, props);
-    const {tags} = props;
-
-    new MyService(this, 'MyServiceApp', {
-      isProd: true,
-      stackPrefix: ENV_NAME,
-      computeStackPrefix: COMPUTE_ENV_NAME,
-      ecrRepoName: ecrRepoName,
-      localAssetPath: '',
-      tags
-    });
-  }
-}
-
 interface PipelineStackProps extends cdk.StackProps {
-  fargateAppSrcDir : string
+  fargateAppSrcDir: string
 };
 
 export default class PipelineStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: PipelineStackProps) {
     super(scope, id, props);
-    const {tags} = props;
+    const { tags, fargateAppSrcDir } = props;
 
-    // const bucket = new s3.Bucket(this, 'ArtifactBucket', {
-    //   autoDeleteObjects: true,
-    //   blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-    //   encryption: s3.BucketEncryption.S3_MANAGED,
-    //   removalPolicy: cdk.RemovalPolicy.DESTROY
-    // });
-
-    /*
-     * setup self mutating pipeline for /cdk-app
-     */
+    // self mutating pipeline for /cdk-app
     const sourceArtifact = new codepipeline.Artifact();
+    const pipeline = this.getPipelineDefinition(sourceArtifact);
+
+    const repository = new ecr.Repository(this, 'Repository', {
+      repositoryName: ecrRepoName,
+      removalPolicy: cdk.RemovalPolicy.RETAIN // destroy would only work if you had a mechanism for emptying it also.
+    });
+    const buildRole = new iam.Role(this, 'DockerBuildRole', {
+      assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
+    });
+    repository.grantPullPush(buildRole);
+
+    const dockerBuildStage = pipeline.addStage('docker-build-stage');
+    this.setupDockerBuildStage(fargateAppSrcDir, dockerBuildStage, buildRole, sourceArtifact, repository.repositoryUri);
+
+    const deployStage = new DeployStage(this, APP_NAME, { tags });
+    pipeline.addApplicationStage(deployStage);
+  }
+
+  private getPipelineDefinition(
+    sourceArtifact: codepipeline.Artifact
+  ): CdkPipeline {
     const cdkOutputArtifact = new codepipeline.Artifact();
-    const pipeline = new CdkPipeline(this, 'CdkPipeline', {
-      // artifactBucket: bucket,
+    return new CdkPipeline(this, 'CdkPipeline', {
       crossAccountKeys: false,
       pipelineName: 'aws-cdk-q-starter',
       cloudAssemblyArtifact: cdkOutputArtifact,
@@ -76,28 +73,6 @@ export default class PipelineStack extends cdk.Stack {
         synthCommand: 'npm run synth'
       }),
     });
-
-    const repository = new ecr.Repository(this, 'Repository', {
-      repositoryName: ecrRepoName,
-      removalPolicy: cdk.RemovalPolicy.RETAIN // destroy would only work if you had a mechanism for emptying it also.
-    });
-    const buildRole = new iam.Role(this, 'DockerBuildRole', {
-      assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
-    });
-    repository.grantPullPush(buildRole);
-    const { repositoryUri } = repository;
-
-    /*
-     * for each docker, make additional build stage
-     */
-    const dockerBuildStage = pipeline.addStage('docker-build-stage');
-    this.setupDockerBuildStage(props.fargateAppSrcDir, dockerBuildStage, buildRole, sourceArtifact, repositoryUri);
-
-    /*
-     * Deploy everything
-     */
-    const deployStage = new DeployStage(this, APP_NAME, {tags});
-    pipeline.addApplicationStage(deployStage);
   }
 
   private setupDockerBuildStage(
@@ -105,8 +80,8 @@ export default class PipelineStack extends cdk.Stack {
     stage: pipelines.CdkStage,
     buildRole: iam.Role,
     source: codepipeline.Artifact,
-    repositoryUri: string)
-  {
+    repositoryUri: string
+  ) {
     const dockerUser = cdk.SecretValue.secretsManager(SECRET_MANAGER_DOCKER_USER);
     const dockerPwd = cdk.SecretValue.secretsManager(SECRET_MANAGER_DOCKER_PWD);
     const buildSpec = codebuild.BuildSpec.fromObject({
@@ -149,6 +124,25 @@ export default class PipelineStack extends cdk.Stack {
         },
         buildSpec
       })
-    }))
+    }));
+  }
+}
+
+interface DeployStageProps extends cdk.StageProps {
+  tags?: { [key: string]: string; };
+}
+
+class DeployStage extends cdk.Stage {
+  constructor(scope: cdk.Construct, id: string, props: DeployStageProps) {
+    super(scope, id, props);
+    const { tags } = props;
+
+    new MyService(this, 'MyServiceApp', {
+      isProd: true,
+      stackPrefix: ENV_NAME,
+      computeStackPrefix: COMPUTE_ENV_NAME,
+      ecrRepoName: ecrRepoName,
+      tags
+    });
   }
 }
