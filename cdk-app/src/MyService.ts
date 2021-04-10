@@ -156,7 +156,7 @@ class FargateStack extends cdk.Stack {
       publicLoadBalancer: false,
       circuitBreaker: {rollback: true},
       healthCheck: {
-        command: ['CMD-SHELL', 'curl -f http://localhost:8080/ || exit 1'],
+        command: ['CMD-SHELL', 'curl -f http://localhost:8080/unhealthy || exit 1'],
         startPeriod: cdk.Duration.seconds(60)
       }
     });
