@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
     }
     else {
       console.log(data);
-      res.send('SUCCESS blue unhealthy2! : ' + JSON.stringify(data));
+      res.send('SUCCESS blue2! : ' + JSON.stringify(data));
     }
   });
 });
