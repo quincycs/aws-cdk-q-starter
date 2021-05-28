@@ -1,5 +1,5 @@
 import { SubnetSelection } from '@aws-cdk/aws-ec2';
-import { FargatePlatformVersion, FargateService, FargateTaskDefinition, HealthCheck } from '@aws-cdk/aws-ecs';
+import { CapacityProviderStrategy, FargatePlatformVersion, FargateService, FargateTaskDefinition, HealthCheck } from '@aws-cdk/aws-ecs';
 import * as cxapi from '@aws-cdk/cx-api';
 import { Construct } from 'constructs';
 // import { NetworkLoadBalancedServiceBase, NetworkLoadBalancedServiceBaseProps } from '../base/network-load-balanced-service-base';
@@ -92,7 +92,15 @@ export interface NetworkLoadBalancedFargateServiceProps extends NetworkLoadBalan
     * @default - Health check configuration from container.
     * @stability stable
     */
-   readonly healthCheck?: HealthCheck;
+  readonly healthCheck?: HealthCheck;
+
+  /**
+    * A list of Capacity Provider strategies used to place a service.
+    *
+    * @default - undefined
+    * @stability stable
+    */
+  readonly capacityProviderStrategies?: CapacityProviderStrategy[];
 }
 
 /**
@@ -169,6 +177,7 @@ export class NetworkLoadBalancedFargateService extends NetworkLoadBalancedServic
       deploymentController: props.deploymentController,
       circuitBreaker: props.circuitBreaker,
       vpcSubnets: props.taskSubnets,
+      capacityProviderStrategies: props.capacityProviderStrategies,
     });
     this.addServiceAsTarget(this.service);
   }

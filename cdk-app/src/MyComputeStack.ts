@@ -114,7 +114,13 @@ export default class MyComputeStack extends cdk.Stack {
       healthCheck: {
         command: ['CMD-SHELL', 'curl -f http://localhost:8080/ || exit 1'],
         startPeriod: cdk.Duration.seconds(60)
-      }
+      },
+      capacityProviderStrategies: [
+        {
+          capacityProvider: 'FARGATE_SPOT',
+          weight: 1
+        }
+      ]
     });
 
     this.setFargateTargetGroup(fargateService.targetGroup);
