@@ -32,6 +32,8 @@
     "@aws-cdk/aws-codepipeline": "*",
     "@aws-cdk/aws-codepipeline-actions": "*",
     "@aws-cdk/pipelines": "*",
-    "@aws-cdk/aws-s3": "*"
+    "@aws-cdk/aws-s3": "*",
+    "@aws-cdk/aws-events": "*",
+    "@aws-cdk/aws-events-targets": "*"
   }
 }

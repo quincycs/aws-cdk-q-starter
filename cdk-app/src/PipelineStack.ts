@@ -5,6 +5,8 @@ import * as pipelines from '@aws-cdk/pipelines';
 import * as codebuild from '@aws-cdk/aws-codebuild';
 import * as ecr from '@aws-cdk/aws-ecr';
 import * as iam from '@aws-cdk/aws-iam';
+import * as events from '@aws-cdk/aws-events';
+import * as events_targets from '@aws-cdk/aws-events-targets';
 import { CdkPipeline } from '@aws-cdk/pipelines';
 
 import MyService from './MyService';
@@ -17,6 +19,7 @@ import {
   SECRET_MANAGER_DOCKER_USER,
   SECRET_MANAGER_DOCKER_PWD
 } from './config';
+import { Duration } from '@aws-cdk/core';
 
 const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/${COMPUTE_ENV_NAME}/app`;
 
@@ -36,6 +39,10 @@ export default class PipelineStack extends cdk.Stack {
     const sourceArtifact = new codepipeline.Artifact();
     const pipeline = this.genPipelineDefinition(sourceArtifact);
 
+    // additionally trigger a pipeline run once a week even without code changes.
+    //    this is to keep the base docker image fresh with latest underlying improvements.
+    this.genPipelineScheduleRuleDefinition(pipeline);
+
     const repository = new ecr.Repository(this, 'Repository', {
       repositoryName: ecrRepoName,
       removalPolicy: cdk.RemovalPolicy.RETAIN // destroy would only work if you had a mechanism for emptying it also.
@@ -50,6 +57,16 @@ export default class PipelineStack extends cdk.Stack {
 
     const deployStage = new DeployStage(this, APP_NAME, { tags });
     pipeline.addApplicationStage(deployStage);
+  }
+
+  private genPipelineScheduleRuleDefinition(
+    pipeline: pipelines.CdkPipeline
+  ): events.Rule {
+    const rule = new events.Rule(this, 'Weekly', {
+      schedule: events.Schedule.rate(Duration.days(7))
+    });
+    rule.addTarget(new events_targets.CodePipeline(pipeline.codePipeline));
+    return rule;
   }
 
   private genPipelineDefinition(
