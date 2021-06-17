@@ -20,7 +20,7 @@ interface EnvProps {
 export default class MyService extends cdk.Construct {
   constructor(scope: cdk.Construct, id: string, props: EnvProps) {
     super(scope, id);
-    const { isProd, stackPrefix, localAssetPath, ecrRepoName, computeStackPrefix, tags } = props;
+    const { stackPrefix, localAssetPath, ecrRepoName, computeStackPrefix, tags } = props;
 
     const dataStack = new MyNetworkDataStack(scope, `${stackPrefix}-base`, { tags });
 
@@ -33,14 +33,12 @@ export default class MyService extends cdk.Construct {
     });
     computeStack.addDependency(dataStack);
 
-    if (!isProd) {
-      const devStack = new MyDevServerStack(scope, `${stackPrefix}-user1-devserver-stack`, {
-        vpc: dataStack.Vpc,
-        dyTable: dataStack.DyTable,
-        keyPairName: EC2_KEY_PAIR,
-        tags
-      });
-      devStack.addDependency(dataStack);
-    }
+    const devStack = new MyDevServerStack(scope, `${stackPrefix}-user1-devserver-stack`, {
+      vpc: dataStack.Vpc,
+      dyTable: dataStack.DyTable,
+      keyPairName: EC2_KEY_PAIR,
+      tags
+    });
+    devStack.addDependency(dataStack);
   }
 }
