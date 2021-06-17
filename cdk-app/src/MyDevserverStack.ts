@@ -37,7 +37,7 @@ export default class MyDevServerStack extends cdk.Stack {
   private genDevserverDefinition(vpc: ec2.Vpc, keyName: string) {
     const instance = new ec2.Instance(this, 'Instance', {
       vpc,
-      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3A, ec2.InstanceSize.MEDIUM),
+      instanceType: ec2.InstanceType.of(ec2.InstanceClass.M5, ec2.InstanceSize.LARGE),
       machineImage: new ec2.AmazonLinuxImage({ generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2 }),
       keyName,
       vpcSubnets: {
