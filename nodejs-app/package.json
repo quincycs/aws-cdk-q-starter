@@ -9,6 +9,6 @@
   },
   "dependencies": {
     "express": "^4.16.1",
-    "aws-sdk": "^2.578.0"
+    "aws-sdk": "^2.814.0"
   }
 }
