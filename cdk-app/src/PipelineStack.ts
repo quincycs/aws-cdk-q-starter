@@ -1,25 +1,26 @@
-import * as cdk from '@aws-cdk/core';
-import * as codepipeline from '@aws-cdk/aws-codepipeline';
-import * as codepipeline_actions from '@aws-cdk/aws-codepipeline-actions';
-import * as pipelines from '@aws-cdk/pipelines';
-import * as codebuild from '@aws-cdk/aws-codebuild';
-import * as ecr from '@aws-cdk/aws-ecr';
-import * as iam from '@aws-cdk/aws-iam';
-import * as events from '@aws-cdk/aws-events';
-import * as events_targets from '@aws-cdk/aws-events-targets';
-import { CdkPipeline } from '@aws-cdk/pipelines';
+import * as cdk from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import * as pipelines from 'aws-cdk-lib/pipelines';
+import * as codebuild from 'aws-cdk-lib/aws-codebuild';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as events_targets from 'aws-cdk-lib/aws-events-targets';
+import { CodePipeline } from 'aws-cdk-lib/pipelines';
 
 import MyService from './MyService';
 import {
   ENV_NAME,
   COMPUTE_ENV_NAME,
-  APP_NAME, GITHUB_OWNER,
+  APP_NAME, 
+  GITHUB_OWNER,
   GITHUB_REPO,
+  GITHUB_REPO_BRANCH,
   SECRET_MANAGER_GITHUB_AUTH,
   SECRET_MANAGER_DOCKER_USER,
   SECRET_MANAGER_DOCKER_PWD
 } from './config';
-import { Duration } from '@aws-cdk/core';
+import { Duration } from 'aws-cdk-lib';
 
 const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/${COMPUTE_ENV_NAME}/app`;
 
@@ -31,13 +32,15 @@ interface PipelineStackProps extends cdk.StackProps {
  * Defines an CI/CD pipeline to build, deploy MyService, and self-mutate the pipeline.
  */
 export default class PipelineStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props: PipelineStackProps) {
+  constructor(scope: Construct, id: string, props: PipelineStackProps) {
     super(scope, id, props);
     const { tags, fargateAppSrcDir } = props;
 
     // self mutating pipeline for /cdk-app
-    const sourceArtifact = new codepipeline.Artifact();
-    const pipeline = this.genPipelineDefinition(sourceArtifact);
+    const sourceInput = pipelines.CodePipelineSource.gitHub(`${GITHUB_OWNER}/${GITHUB_REPO}`, GITHUB_REPO_BRANCH, {
+      authentication: cdk.SecretValue.secretsManager(SECRET_MANAGER_GITHUB_AUTH),
+    })
+    const pipeline = this.genPipelineDefinition(sourceInput);
 
     // additionally trigger a pipeline run once a week even without code changes.
     //    this is to keep the base docker image fresh with latest underlying improvements.
@@ -52,54 +55,46 @@ export default class PipelineStack extends cdk.Stack {
     });
     repository.grantPullPush(buildRole);
 
-    const dockerBuildStage = pipeline.addStage('docker-build-stage');
-    this.setDockerBuildStage(fargateAppSrcDir, dockerBuildStage, buildRole, sourceArtifact, repository.repositoryUri);
+    this.addDockerBuildWave(pipeline, sourceInput, fargateAppSrcDir, buildRole, repository.repositoryUri);
 
     const deployStage = new DeployStage(this, APP_NAME, { tags });
-    pipeline.addApplicationStage(deployStage);
+    pipeline.addStage(deployStage);
   }
 
   private genPipelineScheduleRuleDefinition(
-    pipeline: pipelines.CdkPipeline
+    pipeline: pipelines.CodePipeline
   ): events.Rule {
     const rule = new events.Rule(this, 'Weekly', {
       schedule: events.Schedule.rate(Duration.days(7))
     });
-    rule.addTarget(new events_targets.CodePipeline(pipeline.codePipeline));
+    rule.addTarget(new events_targets.CodePipeline(pipeline.pipeline));
     return rule;
   }
 
   private genPipelineDefinition(
-    sourceArtifact: codepipeline.Artifact
-  ): CdkPipeline {
-    const cdkOutputArtifact = new codepipeline.Artifact();
-    return new CdkPipeline(this, 'CdkPipeline', {
+    sourceInput: cdk.pipelines.IFileSetProducer
+  ): CodePipeline {
+    return new CodePipeline(this, 'CdkPipeline', {
       crossAccountKeys: false,
       pipelineName: 'aws-cdk-q-starter',
-      cloudAssemblyArtifact: cdkOutputArtifact,
-      sourceAction: new codepipeline_actions.GitHubSourceAction({
-        actionName: 'aws-cdk-q-starter-src-download',
-        owner: GITHUB_OWNER,
-        repo: GITHUB_REPO,
-        oauthToken: cdk.SecretValue.secretsManager(SECRET_MANAGER_GITHUB_AUTH),
-        output: sourceArtifact,
-      }),
-      synthAction: pipelines.SimpleSynthAction.standardNpmSynth({
-        sourceArtifact: sourceArtifact,
-        cloudAssemblyArtifact: cdkOutputArtifact,
-        subdirectory: 'cdk-app',
-        installCommand: 'npm ci',
-        buildCommand: 'npm run build',
-        synthCommand: 'npm run synth'
-      }),
+      synth: new pipelines.ShellStep('Synth', {
+        input: sourceInput,
+        primaryOutputDirectory: 'cdk-app/cdk.out',
+        commands: [
+          'cd cdk-app',
+          'npm ci',
+          'npm run build',
+          'npm run synth'
+        ]
+      })
     });
   }
 
-  private setDockerBuildStage(
+  private addDockerBuildWave(
+    pipeline: pipelines.CodePipeline,
+    sourceInput: cdk.pipelines.IFileSetProducer,
     dockerFolder: string,
-    stage: pipelines.CdkStage,
     buildRole: iam.Role,
-    source: codepipeline.Artifact,
     repositoryUri: string
   ) {
     const dockerUser = cdk.SecretValue.secretsManager(SECRET_MANAGER_DOCKER_USER);
@@ -133,18 +128,20 @@ export default class PipelineStack extends cdk.Stack {
       },
     });
 
-    stage.addActions(new codepipeline_actions.CodeBuildAction({
-      actionName: 'DockerBuild',
-      input: source,
-      project: new codebuild.Project(this, 'DockerBuild', {
-        role: buildRole,
-        environment: {
-          buildImage: codebuild.LinuxBuildImage.STANDARD_4_0,
-          privileged: true
-        },
-        buildSpec
-      })
-    }));
+    pipeline.addWave('DockerBuildWave', {
+      post: [
+        new pipelines.CodeBuildStep('DockerBuild', {
+          input: sourceInput,
+          buildEnvironment: {
+            buildImage: codebuild.LinuxBuildImage.STANDARD_4_0,
+            privileged: true
+          },
+          role: buildRole,
+          partialBuildSpec: buildSpec,
+          commands: [] // all contained in buildspec
+        })
+      ]
+    });
   }
 }
 
@@ -153,7 +150,7 @@ interface DeployStageProps extends cdk.StageProps {
 }
 
 class DeployStage extends cdk.Stage {
-  constructor(scope: cdk.Construct, id: string, props: DeployStageProps) {
+  constructor(scope: Construct, id: string, props: DeployStageProps) {
     super(scope, id, props);
     const { tags } = props;
 

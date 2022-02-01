@@ -1,9 +1,8 @@
-import { SubnetSelection } from '@aws-cdk/aws-ec2';
-import { CapacityProviderStrategy, FargatePlatformVersion, FargateService, FargateTaskDefinition, HealthCheck } from '@aws-cdk/aws-ecs';
-import * as cxapi from '@aws-cdk/cx-api';
+import { SubnetSelection } from 'aws-cdk-lib/aws-ec2';
+import { CapacityProviderStrategy, FargatePlatformVersion, FargateService, FargateTaskDefinition, HealthCheck } from 'aws-cdk-lib/aws-ecs';
 import { Construct } from 'constructs';
 // import { NetworkLoadBalancedServiceBase, NetworkLoadBalancedServiceBaseProps } from '../base/network-load-balanced-service-base';
-import { NetworkLoadBalancedServiceBase, NetworkLoadBalancedServiceBaseProps } from '@aws-cdk/aws-ecs-patterns';
+import { NetworkLoadBalancedServiceBase, NetworkLoadBalancedServiceBaseProps } from 'aws-cdk-lib/aws-ecs-patterns';
 
 /**
  * The properties for the NetworkLoadBalancedFargateService service.
@@ -159,11 +158,9 @@ export class NetworkLoadBalancedFargateService extends NetworkLoadBalancedServic
       throw new Error('You must specify one of: taskDefinition or image');
     }
 
-    const desiredCount = this.node.tryGetContext(cxapi.ECS_REMOVE_DEFAULT_DESIRED_COUNT) ? this.internalDesiredCount : this.desiredCount;
-
     this.service = new FargateService(this, 'Service', {
       cluster: this.cluster,
-      desiredCount: desiredCount,
+      desiredCount: this.internalDesiredCount,
       taskDefinition: this.taskDefinition,
       assignPublicIp: this.assignPublicIp,
       serviceName: props.serviceName,

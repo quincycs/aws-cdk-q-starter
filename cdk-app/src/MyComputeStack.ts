@@ -1,12 +1,13 @@
-import * as cdk from '@aws-cdk/core';
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as dynamodb from '@aws-cdk/aws-dynamodb';
-import * as ecs from '@aws-cdk/aws-ecs';
-import * as ecr from '@aws-cdk/aws-ecr';
-import * as apigw from '@aws-cdk/aws-apigateway';
-import { AdjustmentType } from '@aws-cdk/aws-applicationautoscaling';
-import { RetentionDays } from '@aws-cdk/aws-logs';
-import { NetworkLoadBalancer, NetworkTargetGroup, Protocol } from '@aws-cdk/aws-elasticloadbalancingv2';
+import * as cdk from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as apigw from 'aws-cdk-lib/aws-apigateway';
+import { AdjustmentType } from 'aws-cdk-lib/aws-applicationautoscaling';
+import { RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { NetworkLoadBalancer, NetworkTargetGroup, Protocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 
 import { APIGW_API, APIGW_ROOT, DEFAULT_REGION } from './config';
 import { NetworkLoadBalancedFargateService } from './lib/network-load-balanced-fargate-service';
@@ -19,7 +20,7 @@ interface FargateStackProps extends cdk.StackProps {
 }
 
 export default class MyComputeStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props: FargateStackProps) {
+  constructor(scope: Construct, id: string, props: FargateStackProps) {
     super(scope, id, props);
     const { vpc, dyTable, localAssetPath, ecrRepoName } = props;
 
@@ -104,7 +105,7 @@ export default class MyComputeStack extends cdk.Stack {
           AWS_DEFAULT_REGION: DEFAULT_REGION
         }
       },
-      desiredCount: 1,
+      desiredCount: 2,
       minHealthyPercent: 100,
       maxHealthyPercent: 200,
       cpu: 256,

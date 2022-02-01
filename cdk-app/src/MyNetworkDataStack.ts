@@ -1,6 +1,7 @@
-import * as cdk from '@aws-cdk/core';
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as dynamodb from '@aws-cdk/aws-dynamodb';
+import * as cdk from 'aws-cdk-lib';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import { Construct } from 'constructs';
 
 import { EC2_KEY_PAIR, DEFAULT_REGION, DEFAULT_NAT_IMAGE, RemovalPolicy } from './config';
 
@@ -12,7 +13,7 @@ export default class MyNetworkDataStack extends cdk.Stack {
   public Vpc: ec2.Vpc;
   public DyTable: dynamodb.Table;
 
-  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     this.Vpc = new ec2.Vpc(this, 'MyVpc', {

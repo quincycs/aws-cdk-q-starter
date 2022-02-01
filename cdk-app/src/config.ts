@@ -1,8 +1,8 @@
-import * as cdk from '@aws-cdk/core';
+import * as cdk from 'aws-cdk-lib';
 
 // deployment options
-const DEV_MODE = false;
-const ENV_NAME = 'prod';
+const DEV_MODE = true;
+const ENV_NAME = 'dev';
 const COMPUTE_ENV_NAME = 'blue';
 const APP_NAME = 'my-api';
 const API_SRC_DIR = 'nodejs-app';
@@ -17,6 +17,7 @@ const APIGW_API = 'epeasxb1ue';
 const APIGW_ROOT = 's9nh9eauli';
 const GITHUB_OWNER = 'quincycs';
 const GITHUB_REPO = 'aws-cdk-q-starter';
+const GITHUB_REPO_BRANCH = 'master';
 const SECRET_MANAGER_GITHUB_AUTH = '/github.com/quincycs';
 const SECRET_MANAGER_DOCKER_USER = 'dockerhub/username';
 const SECRET_MANAGER_DOCKER_PWD = 'dockerhub/password';
@@ -32,6 +33,7 @@ export {
     APIGW_ROOT,
     GITHUB_OWNER,
     GITHUB_REPO,
+    GITHUB_REPO_BRANCH,
     SECRET_MANAGER_GITHUB_AUTH,
     SECRET_MANAGER_DOCKER_USER,
     SECRET_MANAGER_DOCKER_PWD,

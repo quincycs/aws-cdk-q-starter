@@ -1,9 +1,9 @@
-import * as cdk from '@aws-cdk/core';
+import { Construct } from 'constructs';
 
-import { EC2_KEY_PAIR } from './config';
 import MyNetworkDataStack from './MyNetworkDataStack';
 import MyComputeStack from './MyComputeStack';
-import MyDevServerStack from './MyDevserverStack';
+// import MyDevServerStack from './MyDevserverStack';
+// import { EC2_KEY_PAIR } from './config';
 
 interface EnvProps {
   isProd: boolean;
@@ -17,8 +17,8 @@ interface EnvProps {
 /*
  * Composes the reusable stacks to define an environment.
  */
-export default class MyService extends cdk.Construct {
-  constructor(scope: cdk.Construct, id: string, props: EnvProps) {
+export default class MyService extends Construct {
+  constructor(scope: Construct, id: string, props: EnvProps) {
     super(scope, id);
     const { stackPrefix, localAssetPath, ecrRepoName, computeStackPrefix, tags } = props;
 
@@ -33,12 +33,12 @@ export default class MyService extends cdk.Construct {
     });
     computeStack.addDependency(dataStack);
 
-    const devStack = new MyDevServerStack(scope, `${stackPrefix}-user1-devserver-stack`, {
-      vpc: dataStack.Vpc,
-      dyTable: dataStack.DyTable,
-      keyPairName: EC2_KEY_PAIR,
-      tags
-    });
-    devStack.addDependency(dataStack);
+    // const devStack = new MyDevServerStack(scope, `${stackPrefix}-user1-devserver-stack`, {
+    //   vpc: dataStack.Vpc,
+    //   dyTable: dataStack.DyTable,
+    //   keyPairName: EC2_KEY_PAIR,
+    //   tags
+    // });
+    // devStack.addDependency(dataStack);
   }
 }

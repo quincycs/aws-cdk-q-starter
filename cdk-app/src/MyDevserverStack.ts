@@ -1,6 +1,7 @@
-import * as cdk from '@aws-cdk/core';
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as dynamodb from '@aws-cdk/aws-dynamodb';
+import * as cdk from 'aws-cdk-lib';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import { Construct } from 'constructs';
 
 interface MyDevServerStackProps extends cdk.StackProps {
   vpc: ec2.Vpc;
@@ -13,7 +14,7 @@ interface MyDevServerStackProps extends cdk.StackProps {
  *  therefore allowing access to develop inside the VPC.
  */
 export default class MyDevServerStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props: MyDevServerStackProps) {
+  constructor(scope: Construct, id: string, props: MyDevServerStackProps) {
     super(scope, id, props);
     const { vpc, keyPairName } = props;
 
