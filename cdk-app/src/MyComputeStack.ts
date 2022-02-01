@@ -107,7 +107,7 @@ export default class MyComputeStack extends cdk.Stack {
       },
       desiredCount: 2,
       minHealthyPercent: 100,
-      maxHealthyPercent: 200,
+      maxHealthyPercent: 300,
       cpu: 256,
       memoryLimitMiB: 1024,
       publicLoadBalancer: false,
@@ -135,7 +135,8 @@ export default class MyComputeStack extends cdk.Stack {
   }
 
   setFargateTargetGroup(targetGroup: NetworkTargetGroup) {
-    targetGroup.setAttribute("deregistration_delay.timeout_seconds", "600");
+    // "For the duration of the configured timeout, the load balancer will allow existing, in-flight requests made to an instance to complete, but it will not send any new requests to the instance." https://aws.amazon.com/blogs/aws/elb-connection-draining-remove-instances-from-service-with-care/
+    targetGroup.setAttribute("deregistration_delay.timeout_seconds", "60");
     targetGroup.configureHealthCheck({
       protocol: Protocol.TCP,
       enabled: true
@@ -145,7 +146,7 @@ export default class MyComputeStack extends cdk.Stack {
   setFargateServiceScaling(service: ecs.FargateService) {
     const scaling = service.autoScaleTaskCount({
       minCapacity: 2,
-      maxCapacity: 4
+      maxCapacity: 6
     });
     /*
         Scaling         -1          (no change)          +1       +3
