@@ -42,10 +42,6 @@ export default class PipelineStack extends cdk.Stack {
     })
     const pipeline = this.genPipelineDefinition(sourceInput);
 
-    // additionally trigger a pipeline run once a week even without code changes.
-    //    this is to keep the base docker image fresh with latest underlying improvements.
-    this.genPipelineScheduleRuleDefinition(pipeline);
-
     const repository = new ecr.Repository(this, 'Repository', {
       repositoryName: ecrRepoName,
       removalPolicy: cdk.RemovalPolicy.RETAIN // destroy would only work if you had a mechanism for emptying it also.
@@ -59,6 +55,11 @@ export default class PipelineStack extends cdk.Stack {
 
     const deployStage = new DeployStage(this, APP_NAME, { tags });
     pipeline.addStage(deployStage);
+
+    pipeline.buildPipeline();//needed for below
+    // additionally trigger a pipeline run once a week even without code changes.
+    //    this is to keep the base docker image fresh with latest underlying improvements.
+    this.genPipelineScheduleRuleDefinition(pipeline);
   }
 
   private genPipelineScheduleRuleDefinition(
