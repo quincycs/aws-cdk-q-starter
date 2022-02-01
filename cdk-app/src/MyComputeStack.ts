@@ -143,7 +143,10 @@ export default class MyComputeStack extends cdk.Stack {
   }
 
   setFargateServiceScaling(service: ecs.FargateService) {
-    const scaling = service.autoScaleTaskCount({ maxCapacity: 2 });
+    const scaling = service.autoScaleTaskCount({
+      minCapacity: 2,
+      maxCapacity: 4
+    });
     /*
         Scaling         -1          (no change)          +1       +3
                     │        │                       │        │        │
