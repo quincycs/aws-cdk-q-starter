@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
     }
     else {
       console.log(data);
-      res.send('SUCCESS blue v2! : ' + JSON.stringify(data));
+      res.send('SUCCESS blue v3! : ' + JSON.stringify(data));
     }
   });
 });
