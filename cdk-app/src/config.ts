@@ -1,8 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
 
 // deployment options
-const DEV_MODE = true;
-const ENV_NAME = 'dev';
+const DEV_MODE = false;
+const ENV_NAME = 'prod';
 const COMPUTE_ENV_NAME = 'blue';
 const APP_NAME = 'my-api';
 const API_SRC_DIR = 'nodejs-app';
