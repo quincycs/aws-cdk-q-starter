@@ -1,5 +1,6 @@
-import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as cdk from 'aws-cdk-lib';
+import { Duration } from 'aws-cdk-lib';
 import * as pipelines from 'aws-cdk-lib/pipelines';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
@@ -9,7 +10,9 @@ import * as events_targets from 'aws-cdk-lib/aws-events-targets';
 import { CodePipeline } from 'aws-cdk-lib/pipelines';
 
 import MyService from './MyService';
-import {
+import config from './config';
+
+const {
   ENV_NAME,
   COMPUTE_ENV_NAME,
   APP_NAME, 
@@ -19,9 +22,7 @@ import {
   SECRET_MANAGER_GITHUB_AUTH,
   SECRET_MANAGER_DOCKER_USER,
   SECRET_MANAGER_DOCKER_PWD
-} from './config';
-import { Duration } from 'aws-cdk-lib';
-
+} = config;
 const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/${COMPUTE_ENV_NAME}/app`;
 
 interface PipelineStackProps extends cdk.StackProps {
@@ -156,9 +157,6 @@ class DeployStage extends cdk.Stage {
     const { tags } = props;
 
     new MyService(this, 'MyServiceApp', {
-      isProd: true,
-      stackPrefix: ENV_NAME,
-      computeStackPrefix: COMPUTE_ENV_NAME,
       ecrRepoName: ecrRepoName,
       tags
     });

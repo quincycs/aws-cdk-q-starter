@@ -8,11 +8,27 @@ import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import { AdjustmentType } from 'aws-cdk-lib/aws-applicationautoscaling';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { NetworkLoadBalancer, NetworkTargetGroup, Protocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { HostedZone } from 'aws-cdk-lib/aws-route53';
+import { StringParameter } from "aws-cdk-lib/aws-ssm";
 
-import { APIGW_API, APIGW_ROOT, DEFAULT_REGION } from './config';
 import { NetworkLoadBalancedFargateService } from './lib/network-load-balanced-fargate-service';
+import { NetworkLoadBalancedTaskImageOptions } from './lib/network-load-balanced-service-base';
+import config from './config';
 
-interface FargateStackProps extends cdk.StackProps {
+const {
+  APIGW_API,
+  APIGW_ROOT,
+  DEFAULT_REGION,
+  R53_PRIV_ZONE_ID,
+  R53_PRIV_ZONE_NAME,
+  SSM_TLS_PRIV_KEY,
+  SSM_ACM_CERT_ARN,
+  COMPUTE_ENV_NAME
+} = config;
+const containerPort = 8080;
+const computeDNS = `${COMPUTE_ENV_NAME}.${R53_PRIV_ZONE_NAME}`;
+
+interface MyComputeStackProps extends cdk.StackProps {
   vpc: ec2.Vpc;
   dyTable: dynamodb.Table;
   localAssetPath?: string;
@@ -20,7 +36,7 @@ interface FargateStackProps extends cdk.StackProps {
 }
 
 export default class MyComputeStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: FargateStackProps) {
+  constructor(scope: Construct, id: string, props: MyComputeStackProps) {
     super(scope, id, props);
     const { vpc, dyTable, localAssetPath, ecrRepoName } = props;
 
@@ -58,6 +74,7 @@ export default class MyComputeStack extends cdk.Stack {
     const integration = new apigw.Integration({
       type: apigw.IntegrationType.HTTP_PROXY,
       integrationHttpMethod: 'ANY',
+      uri: `https://${computeDNS}`,
       options: {
         connectionType: apigw.ConnectionType.VPC_LINK,
         vpcLink,
@@ -81,51 +98,56 @@ export default class MyComputeStack extends cdk.Stack {
     codeImage: ecs.ContainerImage,
     dyTable: dynamodb.Table
   ): NetworkLoadBalancedFargateService {
-    // Create a cluster
-    const cluster = new ecs.Cluster(this, 'MyCluster', { vpc });
 
-    // STDOUT/STDERR application logs
-    const logDriver = ecs.LogDrivers.awsLogs({
-      streamPrefix: 'my-fargate',
-      logRetention: RetentionDays.ONE_WEEK
+    const domainZone = HostedZone.fromHostedZoneAttributes(this, 'HostedZone', {
+      hostedZoneId: R53_PRIV_ZONE_ID,
+      zoneName: R53_PRIV_ZONE_NAME
+    });
+    const loadBalancerCertArnParam = StringParameter.fromStringParameterAttributes(this, 'lbCertArn', {
+      parameterName: SSM_ACM_CERT_ARN,
     });
 
-    const containerPort = 8080;
+    // Create a cluster
+    const cluster = new ecs.Cluster(this, 'MyCluster', { vpc });
+    const taskImageOptions = this.genFargateTaskImageOptions(codeImage, dyTable);
 
     const fargateService = new NetworkLoadBalancedFargateService(
       this, 'MyFargateService', {
       cluster,
-      taskImageOptions: {
-        enableLogging: true,
-        logDriver,
-        image: codeImage,
-        containerPort,
-        environment: {
-          dbTableName: dyTable.tableName,
-          AWS_DEFAULT_REGION: DEFAULT_REGION
-        }
-      },
-      desiredCount: 2,
-      minHealthyPercent: 100,
-      maxHealthyPercent: 300,
+      taskImageOptions,
+      
+      // resource allocation
       cpu: 256,
       memoryLimitMiB: 1024,
-      publicLoadBalancer: false,
-      circuitBreaker: { rollback: true },
-      healthCheck: {
-        command: ['CMD-SHELL', 'curl -f http://localhost:8080/ || exit 1'],
-        startPeriod: cdk.Duration.seconds(60)
-      },
       capacityProviderStrategies: [
         {
           capacityProvider: 'FARGATE_SPOT',
           weight: 1
         }
-      ]
+      ],
+
+      // initial scaling
+      desiredCount: 2,
+      minHealthyPercent: 100,
+      maxHealthyPercent: 300,
+      
+      // load balancer / routing
+      publicLoadBalancer: false,
+      loadBalancerCertificates: [{certificateArn:loadBalancerCertArnParam.stringValue}],
+      listenerPort: 443,
+      domainZone,
+      domainName: computeDNS,
+
+      // health / recovery
+      circuitBreaker: { rollback: true },
+      healthCheck: {
+        command: ['CMD-SHELL', 'curl -f -k https://localhost:8080/ || exit 1'],
+        startPeriod: cdk.Duration.seconds(60)
+      }
     });
 
     this.setFargateTargetGroup(fargateService.targetGroup);
-    this.setFargateServiceScaling(fargateService.service);
+    this.setFargateServiceAutoScaling(fargateService.service);
 
     // grants
     fargateService.service.connections.allowFromAnyIpv4(ec2.Port.tcp(containerPort));
@@ -134,7 +156,39 @@ export default class MyComputeStack extends cdk.Stack {
     return fargateService;
   }
 
-  setFargateTargetGroup(targetGroup: NetworkTargetGroup) {
+  private genFargateTaskImageOptions(
+    codeImage: ecs.ContainerImage,
+    dyTable: dynamodb.Table
+  ): NetworkLoadBalancedTaskImageOptions {
+
+    // STDOUT/STDERR application logs
+    const logDriver = ecs.LogDrivers.awsLogs({
+      streamPrefix: 'my-fargate',
+      logRetention: RetentionDays.ONE_WEEK
+    });
+
+    // Container needs private key to decrypt self-signed TLS traffic
+    const tlsPrivateKeySecret = StringParameter.fromSecureStringParameterAttributes(this, 'privateKeySecret', {
+      parameterName: SSM_TLS_PRIV_KEY,
+      version: 1
+    });
+
+    return {
+      enableLogging: true,
+      logDriver,
+      image: codeImage,
+      containerPort,
+      environment: {
+        dbTableName: dyTable.tableName,
+        AWS_DEFAULT_REGION: DEFAULT_REGION
+      },
+      secrets: {
+        tlsPrivateKey: ecs.Secret.fromSsmParameter(tlsPrivateKeySecret)
+      }
+    };
+  }
+
+  private setFargateTargetGroup(targetGroup: NetworkTargetGroup) {
     // "For the duration of the configured timeout, the load balancer will allow existing, in-flight requests made to an instance to complete, but it will not send any new requests to the instance." https://aws.amazon.com/blogs/aws/elb-connection-draining-remove-instances-from-service-with-care/
     targetGroup.setAttribute("deregistration_delay.timeout_seconds", "60");
     targetGroup.configureHealthCheck({
@@ -143,7 +197,7 @@ export default class MyComputeStack extends cdk.Stack {
     });
   }
 
-  setFargateServiceScaling(service: ecs.FargateService) {
+  private setFargateServiceAutoScaling(service: ecs.FargateService) {
     const scaling = service.autoScaleTaskCount({
       minCapacity: 2,
       maxCapacity: 6

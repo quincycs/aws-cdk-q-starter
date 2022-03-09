@@ -1,8 +1,7 @@
 import { SubnetSelection } from 'aws-cdk-lib/aws-ec2';
 import { CapacityProviderStrategy, FargatePlatformVersion, FargateService, FargateTaskDefinition, HealthCheck } from 'aws-cdk-lib/aws-ecs';
 import { Construct } from 'constructs';
-// import { NetworkLoadBalancedServiceBase, NetworkLoadBalancedServiceBaseProps } from '../base/network-load-balanced-service-base';
-import { NetworkLoadBalancedServiceBase, NetworkLoadBalancedServiceBaseProps } from 'aws-cdk-lib/aws-ecs-patterns';
+import { NetworkLoadBalancedServiceBase, NetworkLoadBalancedServiceBaseProps } from './network-load-balanced-service-base';
 
 /**
  * The properties for the NetworkLoadBalancedFargateService service.

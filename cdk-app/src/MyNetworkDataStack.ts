@@ -3,7 +3,8 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 
-import { EC2_KEY_PAIR, DEFAULT_REGION, DEFAULT_NAT_IMAGE, RemovalPolicy } from './config';
+import config from './config';
+const { EC2_KEY_PAIR, DEFAULT_REGION, DEFAULT_NAT_IMAGE, RemovalPolicy } = config;
 
 /*
  * Defines the networking and data storage componentns
@@ -28,14 +29,14 @@ export default class MyNetworkDataStack extends cdk.Stack {
         },
         {
           name: 'Private',
-          subnetType: ec2.SubnetType.PRIVATE
+          subnetType: ec2.SubnetType.PRIVATE_WITH_NAT
         },
       ],
       gatewayEndpoints: {
         dbEndpoint: {
           service: ec2.GatewayVpcEndpointAwsService.DYNAMODB,
           subnets: [
-            { subnetType: ec2.SubnetType.PRIVATE }
+            { subnetType: ec2.SubnetType.PRIVATE_WITH_NAT }
           ]
         }
       },
