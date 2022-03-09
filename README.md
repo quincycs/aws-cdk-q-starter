@@ -1,6 +1,6 @@
 # Overview
 
-AWS, Clusters, LoadBalancing, AutoScaling, Containers, Infrastructure as Code, Blue/Green Deployments, Partial Roll Out Deployments, oh my!
+AWS, Clusters, LoadBalancing, AutoScaling, Containers, Infrastructure as Code, Blue/Green Deployments, Partial Roll Out Deployments, End to End Encryption, oh my!
 
 AWS CDK brings all the various AWS services together into something managable by small & large teams. This project is a quick example of how you can use the CDK to build a API to query DyDB. Read more background on this project with my blog on ["Transitioning Your Infrastructure to Architecture as Code"](https://blogs.perficient.com/2021/04/09/transitioning-your-infrastructure-to-architecture-as-code/).
 
