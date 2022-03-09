@@ -1,6 +1,9 @@
 'use strict';
 
 const express = require('express');
+const https = require('https');
+const fs = require('fs');
+
 const DynamoDB = require('aws-sdk/clients/dynamodb');
 
 /*
@@ -8,6 +11,7 @@ const DynamoDB = require('aws-sdk/clients/dynamodb');
  */
 const REGION = process.env.AWS_DEFAULT_REGION;
 const dbTable = process.env.dbTableName;
+const tlsPrivateKey = process.env.tlsPrivateKey;
 
 const db = new DynamoDB({
   apiVersion: '2012-08-10',
@@ -37,6 +41,11 @@ app.get('/', (req, res) => {
   });
 });
 
-app.listen(8080, () => {
+const options = {
+  key: tlsPrivateKey,
+  cert: fs.readFileSync('./certs/public.pem')
+};
+
+https.createServer(options, app).listen(8080, () => {
   console.log(`Listening on 8080`);
 });
