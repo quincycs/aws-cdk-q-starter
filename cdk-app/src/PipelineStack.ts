@@ -43,7 +43,7 @@ export default class PipelineStack extends cdk.Stack {
     const pipeline = this.genPipelineDefinition(sourceInput);
 
     // TODO Unit Tests would be ran inside Dockerfile (during docker build).
-    this.genBuildWave(pipeline, sourceInput, fargateAppSrcDir);
+    this.genBuildWave(fargateAppSrcDir, pipeline, sourceInput);
 
     const devDeployStage = new DeployStage(this, `dev-${APP_NAME}`, {
       envName: 'dev',
@@ -112,9 +112,9 @@ export default class PipelineStack extends cdk.Stack {
   }
 
   private genBuildWave(
+    dockerFolder: string,
     pipeline: pipelines.CodePipeline,
-    sourceInput: cdk.pipelines.IFileSetProducer,
-    dockerFolder: string
+    sourceInput: cdk.pipelines.IFileSetProducer
   ) {
     // create ECR to host built artifact
     const repository = new ecr.Repository(this, 'Repository', {
@@ -158,7 +158,7 @@ export default class PipelineStack extends cdk.Stack {
       },
     });
 
-    pipeline.addWave('DockerBuildWave', {
+    pipeline.addWave(`Build-${dockerFolder}`, {
       post: [
         new pipelines.CodeBuildStep('DockerBuild', {
           input: sourceInput,
