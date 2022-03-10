@@ -4,12 +4,14 @@ import MyNetworkDataStack from './MyNetworkDataStack';
 import MyComputeStack from './MyComputeStack';
 import config from './config';
 import MyApiGatewayStack from './MyApiGatewayStack';
+import { setContext } from './contextConfig';
 // import MyDevServerStack from './MyDevserverStack';
 // import { EC2_KEY_PAIR } from './config';
 
-const { ENV_NAME, APP_NAME, COMPUTE_NAME } = config;
+const { APP_NAME, COMPUTE_NAME, R53_PRIV_ZONE_NAME } = config;
 
-interface EnvProps {
+interface MyServiceProps {
+  envName: string;
   localAssetPath?: string;
   ecrRepoName?: string;
   tags?: { [key: string]: string; };
@@ -19,13 +21,17 @@ interface EnvProps {
  * Composes the reusable stacks to define an environment.
  */
 export default class MyService extends Construct {
-  constructor(scope: Construct, id: string, props: EnvProps) {
+  constructor(scope: Construct, id: string, props: MyServiceProps) {
     super(scope, id);
-    const { localAssetPath, ecrRepoName, tags } = props;
+    const { envName, localAssetPath, ecrRepoName, tags } = props;
+    setContext({
+      envName,
+      computeDNS: `${envName}-${APP_NAME}-${COMPUTE_NAME}.${R53_PRIV_ZONE_NAME}`
+    });
 
-    const dataStack = new MyNetworkDataStack(scope, `${ENV_NAME}-data`, { tags });
+    const dataStack = new MyNetworkDataStack(scope, `${envName}-data`, { tags });
 
-    const computeStack = new MyComputeStack(scope, `${ENV_NAME}-${APP_NAME}-${COMPUTE_NAME}`, {
+    const computeStack = new MyComputeStack(scope, `${envName}-${APP_NAME}-${COMPUTE_NAME}`, {
       vpc: dataStack.Vpc,
       dyTable: dataStack.DyTable,
       localAssetPath,
@@ -34,12 +40,12 @@ export default class MyService extends Construct {
     });
     computeStack.addDependency(dataStack);
 
-    const apiStack = new MyApiGatewayStack(scope, `${ENV_NAME}-${APP_NAME}-apigateway`, {
+    const apiStack = new MyApiGatewayStack(scope, `${envName}-${APP_NAME}-apigateway`, {
       vpcLink: computeStack.vpcLink
     });
     apiStack.addDependency(computeStack);
 
-    // const devStack = new MyDevServerStack(scope, `${ENV_NAME}-${APP_NAME}-user1-devserver`, {
+    // const devStack = new MyDevServerStack(scope, `${envName}-${APP_NAME}-user1-devserver`, {
     //   vpc: dataStack.Vpc,
     //   dyTable: dataStack.DyTable,
     //   keyPairName: EC2_KEY_PAIR,

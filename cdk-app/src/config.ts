@@ -1,6 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
 
-const ENV_NAME = 'dev';
 const APP_NAME = 'myapi';
 
 export default {
@@ -8,13 +7,13 @@ export default {
  *  Deployment options
  */
     DEV_MODE: true,
+    DEV_MODE_ENV_NAME: 'devlocal',
     API_SRC_DIR: 'nodejs-app',
     DEFAULT_REGION: 'us-west-2',
     DEFAULT_NAT_IMAGE: 'ami-088e9a766f5a47026',
     RemovalPolicy: cdk.RemovalPolicy.DESTROY,
-    ENV_NAME,
     APP_NAME,
-    COMPUTE_NAME: 'green',
+    COMPUTE_NAME: 'compute',
 
 /**
  *  Existing AWS Resources

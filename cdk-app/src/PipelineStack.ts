@@ -13,7 +13,6 @@ import MyService from './MyService';
 import config from './config';
 
 const {
-  ENV_NAME,
   APP_NAME,
   COMPUTE_NAME,
   GITHUB_OWNER,
@@ -23,7 +22,6 @@ const {
   SECRET_MANAGER_DOCKER_USER,
   SECRET_MANAGER_DOCKER_PWD
 } = config;
-const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/${COMPUTE_NAME}/app`;
 
 interface PipelineStackProps extends cdk.StackProps {
   fargateAppSrcDir: string
@@ -43,19 +41,39 @@ export default class PipelineStack extends cdk.Stack {
     })
     const pipeline = this.genPipelineDefinition(sourceInput);
 
-    const repository = new ecr.Repository(this, 'Repository', {
-      repositoryName: ecrRepoName,
-      removalPolicy: cdk.RemovalPolicy.RETAIN // destroy would only work if you had a mechanism for emptying it also.
-    });
-    const buildRole = new iam.Role(this, 'DockerBuildRole', {
-      assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
-    });
-    repository.grantPullPush(buildRole);
+    // TODO Unit Tests would be ran inside Dockerfile (during docker build).
+    const repo = this.genECRBuildWithWave(pipeline, sourceInput, fargateAppSrcDir);
 
-    this.addDockerBuildWave(pipeline, sourceInput, fargateAppSrcDir, buildRole, repository.repositoryUri);
+    const devDeployStage = new DeployStage(this, APP_NAME, {
+      envName: 'dev',
+      ecrRepoName: repo.repositoryName,
+      tags
+    });
+    pipeline.addStage(devDeployStage);
 
-    const deployStage = new DeployStage(this, APP_NAME, { tags });
-    pipeline.addStage(deployStage);
+    // TODO Run automated integration tests against dev environment
+
+    const prodDeployStage = new DeployStage(this, APP_NAME, {
+      envName: 'prod',
+      ecrRepoName: repo.repositoryName,
+      tags
+    });
+    pipeline.addStage(prodDeployStage, {
+      pre: [
+        // TODO manual approval stage ( Action1 OR Action2 OR Action3 )
+        new pipelines.ManualApprovalStep('Approval', {
+          comment: "Go fully to prod?"
+        })
+      ]
+    });
+
+    // TODO Action1: Deploy to "Prod" environment with x% canary ... then loop back to manual approval stage.
+
+    // TODO Action2: Deploy to "Prod" environment with 100%...delete old stack... complete pipeline.
+
+    // TODO Action3: Deploy to "Prod" environment with full rollback ... deleting new stack ... deploying old stack with 100% canary.
+
+    // TODO after any action completes... run automated integration tests against prod.
 
     pipeline.buildPipeline();//needed for below
     // additionally trigger a pipeline run once a week even without code changes.
@@ -92,13 +110,22 @@ export default class PipelineStack extends cdk.Stack {
     });
   }
 
-  private addDockerBuildWave(
+  private genECRBuildWithWave(
     pipeline: pipelines.CodePipeline,
     sourceInput: cdk.pipelines.IFileSetProducer,
-    dockerFolder: string,
-    buildRole: iam.Role,
-    repositoryUri: string
-  ) {
+    dockerFolder: string
+  ): ecr.Repository {
+    // create ECR to host built artifact
+    const repository = new ecr.Repository(this, 'Repository', {
+      repositoryName: `aws-cdk-q-starter/${COMPUTE_NAME}/app`,
+      removalPolicy: cdk.RemovalPolicy.RETAIN // destroy would only work if you had a mechanism for emptying it also.
+    });
+    const buildRole = new iam.Role(this, 'DockerBuildRole', {
+      assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
+    });
+    repository.grantPullPush(buildRole);
+
+    // create BuildSpec
     const dockerUser = cdk.SecretValue.secretsManager(SECRET_MANAGER_DOCKER_USER);
     const dockerPwd = cdk.SecretValue.secretsManager(SECRET_MANAGER_DOCKER_PWD);
     const buildSpec = codebuild.BuildSpec.fromObject({
@@ -117,14 +144,14 @@ export default class PipelineStack extends cdk.Stack {
           commands: [
             'echo Build started on `date`',
             'echo Building the Docker image...',
-            `docker build -t ${repositoryUri}:$CODEBUILD_RESOLVED_SOURCE_VERSION .`,
+            `docker build -t ${repository.repositoryUri}:$CODEBUILD_RESOLVED_SOURCE_VERSION .`,
           ]
         },
         post_build: {
           commands: [
             'echo Build completed on `date`',
             'echo Pushing the Docker image...',
-            `docker push ${repositoryUri}:$CODEBUILD_RESOLVED_SOURCE_VERSION`,
+            `docker push ${repository.repositoryUri}:$CODEBUILD_RESOLVED_SOURCE_VERSION`,
           ]
         },
       },
@@ -144,20 +171,25 @@ export default class PipelineStack extends cdk.Stack {
         })
       ]
     });
+
+    return repository;
   }
 }
 
 interface DeployStageProps extends cdk.StageProps {
+  envName: string;
+  ecrRepoName: string;
   tags?: { [key: string]: string; };
 }
 
 class DeployStage extends cdk.Stage {
   constructor(scope: Construct, id: string, props: DeployStageProps) {
     super(scope, id, props);
-    const { tags } = props;
+    const { tags, envName, ecrRepoName } = props;
 
     new MyService(this, 'MyServiceApp', {
-      ecrRepoName: ecrRepoName,
+      envName,
+      ecrRepoName,
       tags
     });
   }

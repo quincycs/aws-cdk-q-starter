@@ -14,19 +14,16 @@ import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import { NetworkLoadBalancedFargateService } from './lib/network-load-balanced-fargate-service';
 import { NetworkLoadBalancedTaskImageOptions } from './lib/network-load-balanced-service-base';
 import config from './config';
+import { getContext } from './contextConfig';
 
 const {
   DEFAULT_REGION,
   R53_PRIV_ZONE_ID,
   R53_PRIV_ZONE_NAME,
   SSM_TLS_PRIV_KEY,
-  SSM_ACM_CERT_ARN,
-  ENV_NAME,
-  APP_NAME,
-  COMPUTE_NAME
+  SSM_ACM_CERT_ARN
 } = config;
 const containerPort = 8080;
-const computeDNS = `${ENV_NAME}-${APP_NAME}-${COMPUTE_NAME}.${R53_PRIV_ZONE_NAME}`;
 
 interface MyComputeStackProps extends cdk.StackProps {
   vpc: ec2.Vpc;
@@ -59,13 +56,13 @@ export default class MyComputeStack extends cdk.Stack {
     const fargateService = this.genFargateServiceDefinition(vpc, codeImage, dyTable);
     this.vpcLink = this.genApiGatewayVpcLink(fargateService.loadBalancer);
   }
-  
 
   private genFargateServiceDefinition(
     vpc: ec2.Vpc,
     codeImage: ecs.ContainerImage,
     dyTable: dynamodb.Table
   ): NetworkLoadBalancedFargateService {
+    const { computeDNS } = getContext();
 
     const domainZone = HostedZone.fromHostedZoneAttributes(this, 'HostedZone', {
       hostedZoneId: R53_PRIV_ZONE_ID,

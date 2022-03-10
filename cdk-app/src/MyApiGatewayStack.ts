@@ -3,16 +3,13 @@ import * as cdk from 'aws-cdk-lib';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 
 import config from './config';
+import { getContext } from './contextConfig';
 
 const {
   APIGW_API,
   APIGW_ROOT,
-  R53_PRIV_ZONE_NAME,
-  ENV_NAME,
-  APP_NAME,
-  COMPUTE_NAME
+  APP_NAME
 } = config;
-const computeDNS = `${ENV_NAME}-${APP_NAME}-${COMPUTE_NAME}.${R53_PRIV_ZONE_NAME}`;
 
 interface MyApiGatewayStackProps extends cdk.StackProps {
   vpcLink: apigw.VpcLink
@@ -32,6 +29,7 @@ export default class MyApiGatewayStack extends cdk.Stack {
     api: apigw.IRestApi,
     vpcLink: apigw.VpcLink
   ): apigw.Method[] {
+    const { computeDNS } = getContext();
     const allMethods: apigw.Method[] = [];
     
     /*
@@ -66,6 +64,8 @@ export default class MyApiGatewayStack extends cdk.Stack {
     methods: apigw.Method[],
     vpcLink: apigw.VpcLink
   ) {
+    const { envName } = getContext();
+
     const deployment = new apigw.Deployment(this, `Dep-${new Date().toISOString()}`, {
       api,
       description: `Using VPCLink: ${vpcLink.vpcLinkId}`
@@ -76,7 +76,7 @@ export default class MyApiGatewayStack extends cdk.Stack {
     new apigw.CfnStage(this, 'Stage', {
       deploymentId: deployment.deploymentId,// stage deployment
       restApiId: api.restApiId,
-      stageName: `${ENV_NAME}-${APP_NAME}`,
+      stageName: `${envName}-${APP_NAME}`,
       canarySetting: {
         deploymentId: deployment.deploymentId, // canary deployment
         percentTraffic: 100
