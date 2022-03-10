@@ -31,11 +31,11 @@ export default class MyService extends Construct {
 
     // when locally deploying, stacks should include envName
     // when pipeline deploys, the stage name will automatically be included.
-    const stackPrefix = DEV_MODE ? `${DEV_MODE_ENV_NAME}-` : '';
+    const stackPrefix = DEV_MODE ? `${DEV_MODE_ENV_NAME}-${APP_NAME}` : '';
 
     const dataStack = new MyNetworkDataStack(scope, `${stackPrefix}data`, { tags });
 
-    const computeStack = new MyComputeStack(scope, `${stackPrefix}${APP_NAME}-${COMPUTE_NAME}`, {
+    const computeStack = new MyComputeStack(scope, `${stackPrefix}${COMPUTE_NAME}`, {
       vpc: dataStack.Vpc,
       dyTable: dataStack.DyTable,
       localAssetPath,
@@ -45,7 +45,7 @@ export default class MyService extends Construct {
     });
     computeStack.addDependency(dataStack);
 
-    const apiStack = new MyApiGatewayStack(scope, `${stackPrefix}-${APP_NAME}-apigateway`, {
+    const apiStack = new MyApiGatewayStack(scope, `${stackPrefix}apigateway`, {
       vpcLink: computeStack.vpcLink,
       description: `Depends on ${COMPUTE_NAME} stack`
     });
