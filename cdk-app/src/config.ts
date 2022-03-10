@@ -1,7 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 
 const ENV_NAME = 'dev';
-const APP_NAME = 'my-api';
+const APP_NAME = 'myapi';
 
 export default {
 /**
@@ -14,7 +14,7 @@ export default {
     RemovalPolicy: cdk.RemovalPolicy.DESTROY,
     ENV_NAME,
     APP_NAME,
-    COMPUTE_ENV_NAME: `${ENV_NAME}-${APP_NAME}`,
+    COMPUTE_NAME: 'green',
 
 /**
  *  Existing AWS Resources

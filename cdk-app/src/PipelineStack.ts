@@ -14,8 +14,8 @@ import config from './config';
 
 const {
   ENV_NAME,
-  COMPUTE_ENV_NAME,
-  APP_NAME, 
+  APP_NAME,
+  COMPUTE_NAME,
   GITHUB_OWNER,
   GITHUB_REPO,
   GITHUB_REPO_BRANCH,
@@ -23,7 +23,7 @@ const {
   SECRET_MANAGER_DOCKER_USER,
   SECRET_MANAGER_DOCKER_PWD
 } = config;
-const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/${COMPUTE_ENV_NAME}/app`;
+const ecrRepoName = `aws-cdk-q-starter/${ENV_NAME}/${COMPUTE_NAME}/app`;
 
 interface PipelineStackProps extends cdk.StackProps {
   fargateAppSrcDir: string

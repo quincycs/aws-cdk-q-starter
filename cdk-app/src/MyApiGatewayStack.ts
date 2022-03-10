@@ -1,0 +1,104 @@
+import { Construct } from 'constructs';
+import * as cdk from 'aws-cdk-lib';
+import * as apigw from 'aws-cdk-lib/aws-apigateway';
+
+import config from './config';
+
+const {
+  APIGW_API,
+  APIGW_ROOT,
+  R53_PRIV_ZONE_NAME,
+  ENV_NAME,
+  APP_NAME,
+  COMPUTE_NAME
+} = config;
+const computeDNS = `${ENV_NAME}-${APP_NAME}-${COMPUTE_NAME}.${R53_PRIV_ZONE_NAME}`;
+
+interface MyApiGatewayStackProps extends cdk.StackProps {
+  vpcLink: apigw.VpcLink
+}
+
+export default class MyApiGatewayStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props: MyApiGatewayStackProps) {
+    super(scope, id, props);
+    const { vpcLink } = props;
+
+    const api = this.genApiGatewayDefinition();
+    const methods = this.genApiGatewayMethods(api, vpcLink);
+    this.genApiGatewayDeploy(api, methods, vpcLink);
+  }
+
+  private genApiGatewayMethods(
+    api: apigw.IRestApi,
+    vpcLink: apigw.VpcLink
+  ): apigw.Method[] {
+    const allMethods: apigw.Method[] = [];
+    
+    /*
+     * default integration options
+     */
+    const integrationType = apigw.IntegrationType.HTTP_PROXY;
+    const integrationMethod = 'ANY';
+    const integrationOptions = {
+      connectionType: apigw.ConnectionType.VPC_LINK,
+      vpcLink,
+    };
+    const integrationMethodOptions = {
+      apiKeyRequired: true
+    };
+
+    const item = api.root.addResource('item', {
+      defaultIntegration: new apigw.Integration({
+        type: integrationType,
+        integrationHttpMethod: integrationMethod,
+        uri: `https://${computeDNS}`,
+        options: integrationOptions
+      }),
+      defaultMethodOptions: integrationMethodOptions
+    });
+    allMethods.push(item.addMethod('ANY'));
+
+    return allMethods;
+  }
+
+  private genApiGatewayDeploy(
+    api: apigw.IRestApi,
+    methods: apigw.Method[],
+    vpcLink: apigw.VpcLink
+  ) {
+    const deployment = new apigw.Deployment(this, `Dep-${new Date().toISOString()}`, {
+      api,
+      description: `Using VPCLink: ${vpcLink.vpcLinkId}`
+    });
+    deployment.node.addDependency(...methods);
+    
+    // clean deployment.  stage deployment == canary deployment
+    new apigw.CfnStage(this, 'Stage', {
+      deploymentId: deployment.deploymentId,// stage deployment
+      restApiId: api.restApiId,
+      stageName: `${ENV_NAME}-${APP_NAME}`,
+      canarySetting: {
+        deploymentId: deployment.deploymentId, // canary deployment
+        percentTraffic: 100
+      }
+    });
+
+    // canary deployment. stage deployment not provided. canary deployment updated.
+    // new apigw.CfnStage(this, 'Stage', {
+    //   restApiId: api.restApiId,
+    //   stageName: `${ENV_NAME}-${APP_NAME}`,
+    //   canarySetting: {
+    //     deploymentId: deployment.deploymentId, // canary deployment
+    //     percentTraffic: 50
+    //   }
+    // });
+
+  }
+
+  private genApiGatewayDefinition(): apigw.IRestApi {
+    return apigw.RestApi.fromRestApiAttributes(this, `${this.stackName}-ApiGateway`, {
+      restApiId: APIGW_API,
+      rootResourceId: APIGW_ROOT
+    });
+  }
+}

@@ -1,5 +1,5 @@
-import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
@@ -16,17 +16,17 @@ import { NetworkLoadBalancedTaskImageOptions } from './lib/network-load-balanced
 import config from './config';
 
 const {
-  APIGW_API,
-  APIGW_ROOT,
   DEFAULT_REGION,
   R53_PRIV_ZONE_ID,
   R53_PRIV_ZONE_NAME,
   SSM_TLS_PRIV_KEY,
   SSM_ACM_CERT_ARN,
-  COMPUTE_ENV_NAME
+  ENV_NAME,
+  APP_NAME,
+  COMPUTE_NAME
 } = config;
 const containerPort = 8080;
-const computeDNS = `${COMPUTE_ENV_NAME}.${R53_PRIV_ZONE_NAME}`;
+const computeDNS = `${ENV_NAME}-${APP_NAME}-${COMPUTE_NAME}.${R53_PRIV_ZONE_NAME}`;
 
 interface MyComputeStackProps extends cdk.StackProps {
   vpc: ec2.Vpc;
@@ -36,6 +36,9 @@ interface MyComputeStackProps extends cdk.StackProps {
 }
 
 export default class MyComputeStack extends cdk.Stack {
+
+  public vpcLink: apigw.VpcLink;
+
   constructor(scope: Construct, id: string, props: MyComputeStackProps) {
     super(scope, id, props);
     const { vpc, dyTable, localAssetPath, ecrRepoName } = props;
@@ -54,44 +57,9 @@ export default class MyComputeStack extends cdk.Stack {
     }
 
     const fargateService = this.genFargateServiceDefinition(vpc, codeImage, dyTable);
-    this.genApiGatewayDefinition(fargateService.loadBalancer);
+    this.vpcLink = this.genApiGatewayVpcLink(fargateService.loadBalancer);
   }
-
-  private genApiGatewayDefinition(
-    loadBalancer: NetworkLoadBalancer
-  ): apigw.IRestApi {
-
-    const gateway = apigw.RestApi.fromRestApiAttributes(this, `${this.stackName}-ApiGateway`, {
-      restApiId: APIGW_API,
-      rootResourceId: APIGW_ROOT
-    });
-
-    // integrations
-    const vpcLink = new apigw.VpcLink(this, 'VpcLink', {
-      targets: [loadBalancer],
-      vpcLinkName: `${this.stackName}-VpcLink`
-    });
-    const integration = new apigw.Integration({
-      type: apigw.IntegrationType.HTTP_PROXY,
-      integrationHttpMethod: 'ANY',
-      uri: `https://${computeDNS}`,
-      options: {
-        connectionType: apigw.ConnectionType.VPC_LINK,
-        vpcLink,
-      }
-    });
-
-    // api gateway resources & methods
-    const latest = gateway.root.addResource(`${this.stackName}-latest`, {
-      defaultIntegration: integration,
-      defaultMethodOptions: {
-        apiKeyRequired: true
-      }
-    });
-    latest.addMethod('ANY');
-
-    return gateway;
-  }
+  
 
   private genFargateServiceDefinition(
     vpc: ec2.Vpc,
@@ -186,6 +154,15 @@ export default class MyComputeStack extends cdk.Stack {
         tlsPrivateKey: ecs.Secret.fromSsmParameter(tlsPrivateKeySecret)
       }
     };
+  }
+
+  private genApiGatewayVpcLink(
+    loadBalancer: NetworkLoadBalancer
+  ) {
+    return new apigw.VpcLink(this, 'VpcLink', {
+      targets: [loadBalancer],
+      vpcLinkName: `${this.stackName}-VpcLink`
+    });
   }
 
   private setFargateTargetGroup(targetGroup: NetworkTargetGroup) {
