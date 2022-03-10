@@ -22,6 +22,7 @@ const {
   SECRET_MANAGER_DOCKER_USER,
   SECRET_MANAGER_DOCKER_PWD
 } = config;
+const ecrRepoName = `aws-cdk-q-starter/${COMPUTE_NAME}/app`;
 
 interface PipelineStackProps extends cdk.StackProps {
   fargateAppSrcDir: string
@@ -42,20 +43,20 @@ export default class PipelineStack extends cdk.Stack {
     const pipeline = this.genPipelineDefinition(sourceInput);
 
     // TODO Unit Tests would be ran inside Dockerfile (during docker build).
-    const repo = this.genECRBuildWithWave(pipeline, sourceInput, fargateAppSrcDir);
+    this.genBuildWave(pipeline, sourceInput, fargateAppSrcDir);
 
-    const devDeployStage = new DeployStage(this, APP_NAME, {
+    const devDeployStage = new DeployStage(this, `dev-${APP_NAME}`, {
       envName: 'dev',
-      ecrRepoName: repo.repositoryName,
+      ecrRepoName: ecrRepoName,
       tags
     });
     pipeline.addStage(devDeployStage);
 
     // TODO Run automated integration tests against dev environment
 
-    const prodDeployStage = new DeployStage(this, APP_NAME, {
+    const prodDeployStage = new DeployStage(this, `prod-${APP_NAME}`, {
       envName: 'prod',
-      ecrRepoName: repo.repositoryName,
+      ecrRepoName: ecrRepoName,
       tags
     });
     pipeline.addStage(prodDeployStage, {
@@ -110,14 +111,14 @@ export default class PipelineStack extends cdk.Stack {
     });
   }
 
-  private genECRBuildWithWave(
+  private genBuildWave(
     pipeline: pipelines.CodePipeline,
     sourceInput: cdk.pipelines.IFileSetProducer,
     dockerFolder: string
-  ): ecr.Repository {
+  ) {
     // create ECR to host built artifact
     const repository = new ecr.Repository(this, 'Repository', {
-      repositoryName: `aws-cdk-q-starter/${COMPUTE_NAME}/app`,
+      repositoryName: ecrRepoName,
       removalPolicy: cdk.RemovalPolicy.RETAIN // destroy would only work if you had a mechanism for emptying it also.
     });
     const buildRole = new iam.Role(this, 'DockerBuildRole', {
