@@ -6,7 +6,7 @@ export default {
 /**
  *  Deployment options
  */
-    DEV_MODE: true,
+    DEV_MODE: false,
     DEV_MODE_ENV_NAME: 'devlocal',
     API_SRC_DIR: 'nodejs-app',
     DEFAULT_REGION: 'us-west-2',
