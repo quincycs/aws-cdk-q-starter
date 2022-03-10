@@ -8,7 +8,7 @@ import { setContext } from './contextConfig';
 // import MyDevServerStack from './MyDevserverStack';
 // import { EC2_KEY_PAIR } from './config';
 
-const { APP_NAME, COMPUTE_NAME, R53_PRIV_ZONE_NAME } = config;
+const { APP_NAME, COMPUTE_NAME, R53_PRIV_ZONE_NAME, DEV_MODE, DEV_MODE_ENV_NAME } = config;
 
 interface MyServiceProps {
   envName: string;
@@ -29,9 +29,13 @@ export default class MyService extends Construct {
       computeDNS: `${envName}-${APP_NAME}-${COMPUTE_NAME}.${R53_PRIV_ZONE_NAME}`
     });
 
-    const dataStack = new MyNetworkDataStack(scope, `${envName}-data`, { tags });
+    // when locally deploying, stacks should include envName
+    // when pipeline deploys, the stage name will automatically be included.
+    const stackPrefix = DEV_MODE ? DEV_MODE_ENV_NAME : '';
 
-    const computeStack = new MyComputeStack(scope, `${envName}-${APP_NAME}-${COMPUTE_NAME}`, {
+    const dataStack = new MyNetworkDataStack(scope, `${stackPrefix}-data`, { tags });
+
+    const computeStack = new MyComputeStack(scope, `${stackPrefix}-${APP_NAME}-${COMPUTE_NAME}`, {
       vpc: dataStack.Vpc,
       dyTable: dataStack.DyTable,
       localAssetPath,
@@ -40,7 +44,7 @@ export default class MyService extends Construct {
     });
     computeStack.addDependency(dataStack);
 
-    const apiStack = new MyApiGatewayStack(scope, `${envName}-${APP_NAME}-apigateway`, {
+    const apiStack = new MyApiGatewayStack(scope, `${stackPrefix}-${APP_NAME}-apigateway`, {
       vpcLink: computeStack.vpcLink
     });
     apiStack.addDependency(computeStack);
