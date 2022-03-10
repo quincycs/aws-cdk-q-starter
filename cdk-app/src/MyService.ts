@@ -40,12 +40,14 @@ export default class MyService extends Construct {
       dyTable: dataStack.DyTable,
       localAssetPath,
       ecrRepoName,
-      tags
+      tags,
+      description: 'Depends on data stack'
     });
     computeStack.addDependency(dataStack);
 
     const apiStack = new MyApiGatewayStack(scope, `${stackPrefix}-${APP_NAME}-apigateway`, {
-      vpcLink: computeStack.vpcLink
+      vpcLink: computeStack.vpcLink,
+      description: `Depends on ${COMPUTE_NAME} stack`
     });
     apiStack.addDependency(computeStack);
 
