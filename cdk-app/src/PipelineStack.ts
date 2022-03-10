@@ -158,7 +158,7 @@ export default class PipelineStack extends cdk.Stack {
       },
     });
 
-    pipeline.addWave(`Build-${dockerFolder}`, {
+    pipeline.addWave(`Build-/${dockerFolder}`, {
       post: [
         new pipelines.CodeBuildStep('DockerBuild', {
           input: sourceInput,
