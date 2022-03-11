@@ -48,7 +48,7 @@ export default class PipelineStack extends cdk.Stack {
     this.genBuildWave(fargateAppSrcDir, pipeline, sourceInput, ecrRepoName);
 
     // deploy dev + run integration tests.
-    const devDeployStage = new DeployStage(this, `dev-${APP_NAME}`, {
+    const devDeployStage = new DeployStage(this, `dev-${APP_NAME}-stage`, {
       envName: 'dev',
       computeName: 'compute',
       ecrRepoName: ecrRepoName,
@@ -57,7 +57,7 @@ export default class PipelineStack extends cdk.Stack {
     this.addDevStageWithValidationStep(pipeline, devDeployStage);
 
     // manual approval gate then deploy prod canary
-    const prodCanaryDeployStage = new DeployStage(this, `prod-${APP_NAME}`, {
+    const prodCanaryDeployStage = new DeployStage(this, `canary-${APP_NAME}-stage`, {
       envName: 'prod',
       computeName: 'CANARY',
       ecrRepoName: ecrRepoName,
@@ -72,7 +72,7 @@ export default class PipelineStack extends cdk.Stack {
     });
 
     // manual approval gate then deploy fully to prod and reset canary to 0%.
-    const prodDeployStage = new DeployStage(this, `prod-${APP_NAME}`, {
+    const prodDeployStage = new DeployStage(this, `prod-${APP_NAME}-stage`, {
       envName: 'prod',
       computeName: 'compute',
       ecrRepoName: ecrRepoName,
