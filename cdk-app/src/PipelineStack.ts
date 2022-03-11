@@ -14,7 +14,6 @@ import config from './config';
 
 const {
   APP_NAME,
-  COMPUTE_NAME,
   GITHUB_OWNER,
   GITHUB_REPO,
   GITHUB_REPO_BRANCH,
@@ -24,7 +23,6 @@ const {
   SSM_DEV_APIGW_ENDPOINT,
   SSM_DEV_APIGW_KEY
 } = config;
-const ecrRepoName = `aws-cdk-q-starter/${COMPUTE_NAME}/app`;
 
 interface PipelineStackProps extends cdk.StackProps {
   fargateAppSrcDir: string
@@ -38,6 +36,8 @@ export default class PipelineStack extends cdk.Stack {
     super(scope, id, props);
     const { tags, fargateAppSrcDir } = props;
 
+    const ecrRepoName = `aws-cdk-q-starter/${fargateAppSrcDir}/app`;
+
     // self mutating pipeline for /cdk-app
     const sourceInput = pipelines.CodePipelineSource.gitHub(`${GITHUB_OWNER}/${GITHUB_REPO}`, GITHUB_REPO_BRANCH, {
       authentication: cdk.SecretValue.secretsManager(SECRET_MANAGER_GITHUB_AUTH),
@@ -45,37 +45,46 @@ export default class PipelineStack extends cdk.Stack {
     const pipeline = this.genPipelineDefinition(sourceInput);
 
     // unit tests would be ran inside Dockerfile (during docker build).
-    this.genBuildWave(fargateAppSrcDir, pipeline, sourceInput);
+    this.genBuildWave(fargateAppSrcDir, pipeline, sourceInput, ecrRepoName);
 
     // deploy dev + run integration tests.
     const devDeployStage = new DeployStage(this, `dev-${APP_NAME}`, {
       envName: 'dev',
+      computeName: 'compute',
       ecrRepoName: ecrRepoName,
       tags
     });
     this.addDevStageWithValidationStep(pipeline, devDeployStage);
 
-    // manual approval gate then deploy prod
+    // manual approval gate then deploy prod canary
+    const prodCanaryDeployStage = new DeployStage(this, `prod-${APP_NAME}`, {
+      envName: 'prod',
+      computeName: 'CANARY',
+      ecrRepoName: ecrRepoName,
+      tags
+    });
+    pipeline.addStage(prodCanaryDeployStage, {
+      pre: [
+        new pipelines.ManualApprovalStep('Approval', {
+          comment: "Production Canary Deploy @ 0% ?  Any existing canary will be replaced.  It is recommended to set the current canary to 0% before continuing.",
+        })
+      ]
+    });
+
+    // manual approval gate then deploy fully to prod and reset canary to 0%.
     const prodDeployStage = new DeployStage(this, `prod-${APP_NAME}`, {
       envName: 'prod',
+      computeName: 'compute',
       ecrRepoName: ecrRepoName,
       tags
     });
     pipeline.addStage(prodDeployStage, {
       pre: [
         new pipelines.ManualApprovalStep('Approval', {
-          comment: "Go fully to prod?",
+          comment: "Production Deploy @ 100% ?  Any existing canary will be set to 0%.",
         })
       ]
     });
-
-    // TODO Action1: Deploy to "Prod" environment with x% canary ... then loop back to manual approval stage.
-
-    // TODO Action2: Deploy to "Prod" environment with 100%...delete old stack... complete pipeline.
-
-    // TODO Action3: Deploy to "Prod" environment with full rollback ... deleting new stack ... deploying old stack with 100% canary.
-
-    // TODO after any action completes... run automated integration tests against prod.
 
     pipeline.buildPipeline();//needed for below
     // additionally trigger a pipeline run once a week even without code changes.
@@ -138,7 +147,8 @@ export default class PipelineStack extends cdk.Stack {
   private genBuildWave(
     dockerFolder: string,
     pipeline: pipelines.CodePipeline,
-    sourceInput: cdk.pipelines.IFileSetProducer
+    sourceInput: cdk.pipelines.IFileSetProducer,
+    ecrRepoName: string
   ) {
     // create ECR to host built artifact
     const repository = new ecr.Repository(this, 'Repository', {
@@ -203,6 +213,7 @@ export default class PipelineStack extends cdk.Stack {
 
 interface DeployStageProps extends cdk.StageProps {
   envName: string;
+  computeName: string;
   ecrRepoName: string;
   tags?: { [key: string]: string; };
 }
@@ -210,10 +221,11 @@ interface DeployStageProps extends cdk.StageProps {
 class DeployStage extends cdk.Stage {
   constructor(scope: Construct, id: string, props: DeployStageProps) {
     super(scope, id, props);
-    const { tags, envName, ecrRepoName } = props;
+    const { tags, envName, computeName, ecrRepoName } = props;
 
     new MyService(this, 'MyServiceApp', {
       envName,
+      computeName,
       ecrRepoName,
       tags
     });

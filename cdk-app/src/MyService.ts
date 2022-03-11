@@ -8,10 +8,11 @@ import { setContext } from './contextConfig';
 // import MyDevServerStack from './MyDevserverStack';
 // import { EC2_KEY_PAIR } from './config';
 
-const { APP_NAME, COMPUTE_NAME, R53_PRIV_ZONE_NAME } = config;
+const { APP_NAME, R53_PRIV_ZONE_NAME } = config;
 
 interface MyServiceProps {
   envName: string;
+  computeName: string;
   localAssetPath?: string;
   ecrRepoName?: string;
   tags?: { [key: string]: string; };
@@ -23,10 +24,11 @@ interface MyServiceProps {
 export default class MyService extends Construct {
   constructor(scope: Construct, id: string, props: MyServiceProps) {
     super(scope, id);
-    const { envName, localAssetPath, ecrRepoName, tags } = props;
+    const { envName, computeName, localAssetPath, ecrRepoName, tags } = props;
     setContext({
       envName,
-      computeDNS: `${envName}-${APP_NAME}-${COMPUTE_NAME}.${R53_PRIV_ZONE_NAME}`
+      computeName,
+      computeDNS: `${envName}-${APP_NAME}-${computeName}.${R53_PRIV_ZONE_NAME}`
     });
 
     const dataStack = new MyNetworkDataStack(scope, 'data', {
@@ -36,7 +38,7 @@ export default class MyService extends Construct {
     });
 
     const computeStack = new MyComputeStack(scope, 'compute', {
-      stackName: `${envName}-${APP_NAME}-${COMPUTE_NAME}`,
+      stackName: `${envName}-${APP_NAME}-${computeName}`,
       vpc: dataStack.Vpc,
       dyTable: dataStack.DyTable,
       localAssetPath,

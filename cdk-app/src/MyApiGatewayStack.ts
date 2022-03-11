@@ -64,7 +64,7 @@ export default class MyApiGatewayStack extends cdk.Stack {
     methods: apigw.Method[],
     vpcLink: apigw.VpcLink
   ) {
-    const { envName } = getContext();
+    const { envName, computeName } = getContext();
 
     const deployment = new apigw.Deployment(this, `Dep-${new Date().toISOString()}`, {
       api,
@@ -72,27 +72,31 @@ export default class MyApiGatewayStack extends cdk.Stack {
     });
     deployment.node.addDependency(...methods);
     
-    // clean deployment.  stage deployment == canary deployment
-    new apigw.CfnStage(this, 'Stage', {
-      deploymentId: deployment.deploymentId,// stage deployment
-      restApiId: api.restApiId,
-      stageName: `${envName}-${APP_NAME}`,
-      canarySetting: {
-        deploymentId: deployment.deploymentId, // canary deployment
-        percentTraffic: 100
-      }
-    });
-
-    // canary deployment. stage deployment not provided. canary deployment updated.
-    // new apigw.CfnStage(this, 'Stage', {
-    //   restApiId: api.restApiId,
-    //   stageName: `${ENV_NAME}-${APP_NAME}`,
-    //   canarySetting: {
-    //     deploymentId: deployment.deploymentId, // canary deployment
-    //     percentTraffic: 50
-    //   }
-    // });
-
+    if (computeName.toLowerCase().includes('canary')) {
+      // canary deployment. stage deployment not provided. canary deployment updated.
+      new apigw.CfnStage(this, 'Stage', {
+        deploymentId: deployment.deploymentId,// ***TODO REMOVE THIS--TESTING ONLY***
+        restApiId: api.restApiId,
+        stageName: `${envName}-${APP_NAME}`,
+        canarySetting: {
+          deploymentId: deployment.deploymentId, // canary deployment
+          percentTraffic: 0
+        }
+      });
+    }
+    else
+    {
+      // clean deployment.  stage deployment == canary deployment
+      new apigw.CfnStage(this, 'Stage', {
+        deploymentId: deployment.deploymentId,// stage deployment
+        restApiId: api.restApiId,
+        stageName: `${envName}-${APP_NAME}`,
+        canarySetting: {
+          deploymentId: deployment.deploymentId, // canary deployment
+          percentTraffic: 0
+        }
+      });
+    }
   }
 
   private genApiGatewayDefinition(): apigw.IRestApi {

@@ -8,12 +8,12 @@ export default {
  */
     DEV_MODE: false,
     DEV_MODE_ENV_NAME: 'devlocal',
+    DEV_MODE_COMPUTE_NAME: 'compute',
     API_SRC_DIR: 'nodejs-app',
     DEFAULT_REGION: 'us-west-2',
     DEFAULT_NAT_IMAGE: 'ami-088e9a766f5a47026',
     RemovalPolicy: cdk.RemovalPolicy.DESTROY,
     APP_NAME,
-    COMPUTE_NAME: 'compute',
 
 /**
  *  Existing AWS Resources

@@ -1,5 +1,6 @@
 export interface ContextConfigProps {
   envName: string;
+  computeName: string;
   computeDNS: string;
 }
 
