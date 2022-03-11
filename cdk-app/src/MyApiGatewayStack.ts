@@ -97,12 +97,15 @@ export default class MyApiGatewayStack extends cdk.Stack {
 
   private genApiGatewayDefinition(): apigw.IRestApi {
     const { envName } = getContext();
-    const apiId = cdk.aws_ssm.StringParameter.fromStringParameterName(this, 'ssmApiId', SSM_APIGW_ID);
-    const apiRoot = cdk.aws_ssm.StringParameter.fromStringParameterName(this, 'ssmApiRoot', SSM_APIGW_ROOT);
+    const envSSM_APIGW_ID = SSM_APIGW_ID.replace('{envName}',envName);
+    const envSSM_APIGW_ROOT = SSM_APIGW_ROOT.replace('{envName}',envName);
+
+    const apiId = cdk.aws_ssm.StringParameter.fromStringParameterName(this, 'ssmApiId', envSSM_APIGW_ID);
+    const apiRoot = cdk.aws_ssm.StringParameter.fromStringParameterName(this, 'ssmApiRoot', envSSM_APIGW_ROOT);
 
     return apigw.RestApi.fromRestApiAttributes(this, `${this.stackName}-ApiGateway`, {
-      restApiId: apiId.stringValue.replace('{envName}',envName),
-      rootResourceId: apiRoot.stringValue.replace('{envName}', envName)
+      restApiId: apiId.stringValue,
+      rootResourceId: apiRoot.stringValue
     });
   }
 }
