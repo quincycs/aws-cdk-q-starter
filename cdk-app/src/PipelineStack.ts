@@ -11,6 +11,7 @@ import { CodePipeline } from 'aws-cdk-lib/pipelines';
 
 import MyService from './MyService';
 import config from './config';
+// import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 
 const {
   APP_NAME,
@@ -20,8 +21,8 @@ const {
   SECRET_MANAGER_GITHUB_AUTH,
   SECRET_MANAGER_DOCKER_USER,
   SECRET_MANAGER_DOCKER_PWD,
-  SSM_DEV_APIGW_ENDPOINT,
-  SSM_DEV_APIGW_KEY
+/*  SSM_DEV_APIGW_ENDPOINT,
+  SECRET_MANAGER_DEV_APIGW_KEY*/
 } = config;
 
 interface PipelineStackProps extends cdk.StackProps {
@@ -96,24 +97,21 @@ export default class PipelineStack extends cdk.Stack {
     pipeline: cdk.pipelines.CodePipeline,
     devDeployStage: DeployStage
   ) {
-    const endpoint = cdk.aws_ssm.StringParameter.fromStringParameterName(
-      this, 'ssmApiGWEndpoint', SSM_DEV_APIGW_ENDPOINT).stringValue;
-    const apiKey = cdk.aws_ssm.StringParameter.fromSecureStringParameterAttributes(
-      this, 'ssmApiGWKey', {
-        parameterName: SSM_DEV_APIGW_KEY,
-        version: 1
-      }
-    ).stringValue;
-    const stage = `dev-${APP_NAME}`;
-    const resourcePath = 'item';
+    pipeline.addStage(devDeployStage); // TODO remove and uncomment below.
 
-    pipeline.addStage(devDeployStage, {
-      post: [
-        new pipelines.ShellStep('Validate Endpoint', {
-          commands: [`curl -X GET -H "x-api-key: ${apiKey}" -Ssf ${endpoint}/${stage}/${resourcePath}`],
-        }),
-      ],
-    });
+    // const endpoint = cdk.aws_ssm.StringParameter.fromStringParameterName(
+    //   this, 'ssmApiGWEndpoint', SSM_DEV_APIGW_ENDPOINT).stringValue;
+    // const apiKey = cdk.SecretValue.secretsManager(SECRET_MANAGER_DEV_APIGW_KEY);
+    // const stage = `dev-${APP_NAME}`;
+    // const resourcePath = 'item';
+
+    // pipeline.addStage(devDeployStage, {
+    //   post: [
+    //     new pipelines.ShellStep('Validate Endpoint', {
+    //       commands: [`curl -X GET -H "x-api-key: ${apiKey}" -Ssf ${endpoint}/${stage}/${resourcePath}`],
+    //     }),
+    //   ],
+    // });
   }
 
   private genPipelineScheduleRuleDefinition(
