@@ -88,7 +88,7 @@ export default class PipelineStack extends cdk.Stack {
     devDeployStage: DeployStage
   ) {
     const endpoint = cdk.aws_ssm.StringParameter.fromStringParameterName(
-      this, 'ssmApiGWEndpoint', SSM_DEV_APIGW_ENDPOINT);
+      this, 'ssmApiGWEndpoint', SSM_DEV_APIGW_ENDPOINT).stringValue;
     const stage = `dev-${APP_NAME}`;
     const resourcePath = 'item';
 
