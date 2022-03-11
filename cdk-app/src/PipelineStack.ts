@@ -20,7 +20,8 @@ const {
   GITHUB_REPO_BRANCH,
   SECRET_MANAGER_GITHUB_AUTH,
   SECRET_MANAGER_DOCKER_USER,
-  SECRET_MANAGER_DOCKER_PWD
+  SECRET_MANAGER_DOCKER_PWD,
+  SSM_DEV_APIGW_ENDPOINT
 } = config;
 const ecrRepoName = `aws-cdk-q-starter/${COMPUTE_NAME}/app`;
 
@@ -50,7 +51,7 @@ export default class PipelineStack extends cdk.Stack {
       ecrRepoName: ecrRepoName,
       tags
     });
-    pipeline.addStage(devDeployStage);
+    this.addDevStageWithValidationStep(pipeline, devDeployStage);
 
     // TODO Run automated integration tests against dev environment
 
@@ -80,6 +81,24 @@ export default class PipelineStack extends cdk.Stack {
     // additionally trigger a pipeline run once a week even without code changes.
     //    this is to keep the base docker image fresh with latest underlying improvements.
     this.genPipelineScheduleRuleDefinition(pipeline);
+  }
+
+  private addDevStageWithValidationStep(
+    pipeline: cdk.pipelines.CodePipeline,
+    devDeployStage: DeployStage
+  ) {
+    const endpoint = cdk.aws_ssm.StringParameter.fromStringParameterName(
+      this, 'ssmApiGWEndpoint', SSM_DEV_APIGW_ENDPOINT);
+    const stage = `dev-${APP_NAME}`;
+    const resourcePath = 'item';
+
+    pipeline.addStage(devDeployStage, {
+      post: [
+        new pipelines.ShellStep('Validate Endpoint', {
+          commands: [`curl -Ssf ${endpoint}/${stage}/${resourcePath}`],
+        }),
+      ],
+    });
   }
 
   private genPipelineScheduleRuleDefinition(

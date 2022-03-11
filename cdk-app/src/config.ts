@@ -21,6 +21,7 @@ export default {
     EC2_KEY_PAIR: 'user1-key-pair',
     SSM_APIGW_ID: '/{envName}/api.quincymitchell.com/api-gateway/id',
     SSM_APIGW_ROOT: '/{envName}/api.quincymitchell.com/api-gateway/rootResource',
+    SSM_DEV_APIGW_ENDPOINT: '/dev/api.quincymitchell.com/api-gateway/endpointUrl',
     R53_PRIV_ZONE_NAME: 'internal.quincymitchell.com',
     R53_PRIV_ZONE_ID: 'Z03960221LYC8XACEL1Y5',
     SSM_ACM_CERT_ARN: `/${APP_NAME}/acm-cert-arn`,
