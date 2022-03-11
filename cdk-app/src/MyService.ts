@@ -29,12 +29,12 @@ export default class MyService extends Construct {
       computeDNS: `${envName}-${APP_NAME}-${COMPUTE_NAME}.${R53_PRIV_ZONE_NAME}`
     });
 
-    const dataStack = new MyNetworkDataStack(scope, `${envName}-data`, {
+    const dataStack = new MyNetworkDataStack(scope, 'data', {
       stackName: `${envName}-data`,
       tags
     });
 
-    const computeStack = new MyComputeStack(scope, `${envName}-${APP_NAME}-${COMPUTE_NAME}`, {
+    const computeStack = new MyComputeStack(scope, 'compute', {
       stackName: `${envName}-${APP_NAME}-${COMPUTE_NAME}`,
       vpc: dataStack.Vpc,
       dyTable: dataStack.DyTable,
@@ -45,8 +45,8 @@ export default class MyService extends Construct {
     });
     computeStack.addDependency(dataStack);
 
-    const apiStack = new MyApiGatewayStack(scope, `${envName}-apigateway`, {
-      stackName: `${envName}-apigateway`,
+    const apiStack = new MyApiGatewayStack(scope, 'apigateway', {
+      stackName: 'apigateway',
       vpcLink: computeStack.vpcLink,
       description: `Depends on ${COMPUTE_NAME} stack`
     });

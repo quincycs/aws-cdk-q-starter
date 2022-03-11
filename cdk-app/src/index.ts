@@ -18,7 +18,7 @@ if (DEV_MODE) {
     tags
   });
 } else {
-  new PipelineStack(app, 'pipeline-stack', {
+  new PipelineStack(app, 'deployment-code-pipeline', {
     fargateAppSrcDir: API_SRC_DIR,
     tags
   });
