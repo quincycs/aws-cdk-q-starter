@@ -100,7 +100,8 @@ export default class PipelineStack extends cdk.Stack {
       this, 'ssmApiGWEndpoint', SSM_DEV_APIGW_ENDPOINT).stringValue;
     const apiKey = cdk.aws_ssm.StringParameter.fromSecureStringParameterAttributes(
       this, 'ssmApiGWKey', {
-        parameterName: SSM_DEV_APIGW_KEY
+        parameterName: SSM_DEV_APIGW_KEY,
+        version: 1
       }
     ).stringValue;
     const stage = `dev-${APP_NAME}`;
