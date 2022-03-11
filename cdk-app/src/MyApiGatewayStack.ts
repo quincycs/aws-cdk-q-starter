@@ -6,8 +6,8 @@ import config from './config';
 import { getContext } from './contextConfig';
 
 const {
-  APIGW_API,
-  APIGW_ROOT,
+  SSM_APIGW_ID,
+  SSM_APIGW_ROOT,
   APP_NAME
 } = config;
 
@@ -96,9 +96,13 @@ export default class MyApiGatewayStack extends cdk.Stack {
   }
 
   private genApiGatewayDefinition(): apigw.IRestApi {
+    const { envName } = getContext();
+    const apiId = cdk.aws_ssm.StringParameter.fromStringParameterName(this, 'ssmApiId', SSM_APIGW_ID);
+    const apiRoot = cdk.aws_ssm.StringParameter.fromStringParameterName(this, 'ssmApiRoot', SSM_APIGW_ROOT);
+
     return apigw.RestApi.fromRestApiAttributes(this, `${this.stackName}-ApiGateway`, {
-      restApiId: APIGW_API,
-      rootResourceId: APIGW_ROOT
+      restApiId: apiId.stringValue.replace('{envName}',envName),
+      rootResourceId: apiRoot.stringValue.replace('{envName}', envName)
     });
   }
 }

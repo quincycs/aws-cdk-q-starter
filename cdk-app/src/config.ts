@@ -19,8 +19,8 @@ export default {
  *  Existing AWS Resources
  */
     EC2_KEY_PAIR: 'user1-key-pair',
-    APIGW_API: 'epeasxb1ue',
-    APIGW_ROOT: 's9nh9eauli',
+    SSM_APIGW_ID: '/{envName}/api.quincymitchell.com/api-gateway/id',
+    SSM_APIGW_ROOT: '/{envName}/api.quincymitchell.com/api-gateway/rootResource',
     R53_PRIV_ZONE_NAME: 'internal.quincymitchell.com',
     R53_PRIV_ZONE_ID: 'Z03960221LYC8XACEL1Y5',
     SSM_ACM_CERT_ARN: `/${APP_NAME}/acm-cert-arn`,

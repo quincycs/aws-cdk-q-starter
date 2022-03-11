@@ -46,7 +46,7 @@ export default class MyService extends Construct {
     computeStack.addDependency(dataStack);
 
     const apiStack = new MyApiGatewayStack(scope, 'apigateway', {
-      stackName: 'apigateway',
+      stackName: `${envName}-apigateway`,
       vpcLink: computeStack.vpcLink,
       description: `Depends on ${COMPUTE_NAME} stack`
     });
