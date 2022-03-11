@@ -21,7 +21,8 @@ const {
   SECRET_MANAGER_GITHUB_AUTH,
   SECRET_MANAGER_DOCKER_USER,
   SECRET_MANAGER_DOCKER_PWD,
-  SSM_DEV_APIGW_ENDPOINT
+  SSM_DEV_APIGW_ENDPOINT,
+  SSM_DEV_APIGW_KEY
 } = config;
 const ecrRepoName = `aws-cdk-q-starter/${COMPUTE_NAME}/app`;
 
@@ -43,9 +44,10 @@ export default class PipelineStack extends cdk.Stack {
     })
     const pipeline = this.genPipelineDefinition(sourceInput);
 
-    // TODO Unit Tests would be ran inside Dockerfile (during docker build).
+    // unit tests would be ran inside Dockerfile (during docker build).
     this.genBuildWave(fargateAppSrcDir, pipeline, sourceInput);
 
+    // deploy dev + run integration tests.
     const devDeployStage = new DeployStage(this, `dev-${APP_NAME}`, {
       envName: 'dev',
       ecrRepoName: ecrRepoName,
@@ -53,8 +55,7 @@ export default class PipelineStack extends cdk.Stack {
     });
     this.addDevStageWithValidationStep(pipeline, devDeployStage);
 
-    // TODO Run automated integration tests against dev environment
-
+    // manual approval gate then deploy prod
     const prodDeployStage = new DeployStage(this, `prod-${APP_NAME}`, {
       envName: 'prod',
       ecrRepoName: ecrRepoName,
@@ -62,9 +63,8 @@ export default class PipelineStack extends cdk.Stack {
     });
     pipeline.addStage(prodDeployStage, {
       pre: [
-        // TODO manual approval stage ( Action1 OR Action2 OR Action3 )
         new pipelines.ManualApprovalStep('Approval', {
-          comment: "Go fully to prod?"
+          comment: "Go fully to prod?",
         })
       ]
     });
@@ -89,13 +89,18 @@ export default class PipelineStack extends cdk.Stack {
   ) {
     const endpoint = cdk.aws_ssm.StringParameter.fromStringParameterName(
       this, 'ssmApiGWEndpoint', SSM_DEV_APIGW_ENDPOINT).stringValue;
+    const apiKey = cdk.aws_ssm.StringParameter.fromSecureStringParameterAttributes(
+      this, 'ssmApiGWKey', {
+        parameterName: SSM_DEV_APIGW_KEY
+      }
+    ).stringValue;
     const stage = `dev-${APP_NAME}`;
     const resourcePath = 'item';
 
     pipeline.addStage(devDeployStage, {
       post: [
         new pipelines.ShellStep('Validate Endpoint', {
-          commands: [`curl -Ssf ${endpoint}/${stage}/${resourcePath}`],
+          commands: [`curl -X GET -H "x-api-key: ${apiKey}" -Ssf ${endpoint}/${stage}/${resourcePath}`],
         }),
       ],
     });
