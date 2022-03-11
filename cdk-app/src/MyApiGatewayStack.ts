@@ -75,7 +75,6 @@ export default class MyApiGatewayStack extends cdk.Stack {
     if (computeName.toLowerCase().includes('canary')) {
       // canary deployment. stage deployment not provided. canary deployment updated.
       new apigw.CfnStage(this, 'Stage', {
-        deploymentId: deployment.deploymentId,// ***TODO REMOVE THIS--TESTING ONLY***
         restApiId: api.restApiId,
         stageName: `${envName}-${APP_NAME}`,
         canarySetting: {
