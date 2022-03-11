@@ -98,16 +98,15 @@ export default class PipelineStack extends cdk.Stack {
   ) {
     const endpoint = cdk.aws_ssm.StringParameter.fromStringParameterName(
       this, 'ssmApiGWEndpoint', SSM_DEV_APIGW_ENDPOINT).stringValue;
+    const apiKey = cdk.aws_ssm.StringParameter.fromStringParameterName(
+      this, 'ssmApiGWKey', SSM_DEV_APIGW_KEY).stringValue;// https://github.com/aws/aws-cdk/issues/19361
     const stage = `dev-${APP_NAME}`;
     const resourcePath = 'item';
 
     pipeline.addStage(devDeployStage, {
       post: [
         new pipelines.ShellStep('Validate Endpoint', {
-          commands: [`curl -X GET -H "x-api-key: $APIKEY" -Ssf ${endpoint}/${stage}/${resourcePath}`],
-          env: {
-            "parameter-store": SSM_DEV_APIGW_KEY
-          }
+          commands: [`curl -X GET -H "x-api-key: ${apiKey}" -Ssf ${endpoint}/${stage}/${resourcePath}`],
         }),
       ],
     });
