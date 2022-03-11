@@ -31,6 +31,7 @@ export default class MyService extends Construct {
 
     const dataStack = new MyNetworkDataStack(scope, 'data', {
       stackName: `${envName}-data`,
+      description: 'Has no dependencies.',
       tags
     });
 
@@ -41,14 +42,14 @@ export default class MyService extends Construct {
       localAssetPath,
       ecrRepoName,
       tags,
-      description: 'Depends on data stack'
+      description: `Depends on stack: ${dataStack.stackName}`
     });
     computeStack.addDependency(dataStack);
 
     const apiStack = new MyApiGatewayStack(scope, 'apigateway', {
       stackName: `${envName}-apigateway`,
       vpcLink: computeStack.vpcLink,
-      description: `Depends on ${COMPUTE_NAME} stack`
+      description: `Depends on stack: ${computeStack.stackName}`
     });
     apiStack.addDependency(computeStack);
 
