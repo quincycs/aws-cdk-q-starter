@@ -2,3 +2,4 @@ node_modules
 bin
 cdk.out
 .env
+cdk.context.json

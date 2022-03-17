@@ -1,13 +1,15 @@
 import * as cdk from 'aws-cdk-lib';
 
 const APP_NAME = 'myapi';
+const SSM_BASE = '/{envName}/api.quincymitchell.com';
+const SSM_DEV_BASE = SSM_BASE.replace('{envName}', 'dev');
 
 export default {
 /**
  *  Deployment options
  */
     DEV_MODE: false,
-    DEV_MODE_ENV_NAME: 'devlocal',
+    DEV_MODE_ENV_NAME: 'dev',
     DEV_MODE_COMPUTE_NAME: 'compute',
     API_SRC_DIR: 'nodejs-app',
     DEFAULT_REGION: 'us-west-2',
@@ -18,21 +20,28 @@ export default {
 /**
  *  Existing AWS Resources
  */
-    EC2_KEY_PAIR: 'user1-key-pair',
-    SSM_APIGW_ID: '/{envName}/api.quincymitchell.com/api-gateway/id',
-    SSM_APIGW_ROOT: '/{envName}/api.quincymitchell.com/api-gateway/rootResource',
-    SSM_DEV_APIGW_ENDPOINT: '/dev/api.quincymitchell.com/api-gateway/endpointUrl',
-    SSM_DEV_APIGW_KEY: '/dev/api.quincymitchell.com/api-gateway/apikey',
-    R53_PRIV_ZONE_NAME: 'internal.quincymitchell.com',
-    R53_PRIV_ZONE_ID: 'Z03960221LYC8XACEL1Y5',
-    SSM_ACM_CERT_ARN: `/${APP_NAME}/acm-cert-arn`,
-    SSM_TLS_PRIV_KEY: `/${APP_NAME}/tls-private-key`,
+    // per envName
+    SSM_APIGW_ID: `${SSM_BASE}/api-gateway/id`,
+    SSM_APIGW_ROOT: `${SSM_BASE}/api-gateway/rootResource`,
+    SSM_R53_PRIV_ZONE_NAME: `${SSM_BASE}/r53/name`,
+    SSM_R53_PRIV_ZONE_ID: `${SSM_BASE}/r53/id`,
+    SSM_ACM_CERT_ARN: `${SSM_BASE}/acm/internal-lb-cert-arn`,
+    SSM_TLS_PRIV_KEY: `${SSM_BASE}/custom/tls-private-key`,
 
     // devops resources
     GITHUB_OWNER: 'quincycs',
     GITHUB_REPO: 'aws-cdk-q-starter',
     GITHUB_REPO_BRANCH: 'master',
-    SECRET_MANAGER_GITHUB_AUTH: '/github.com/quincycs',
-    SECRET_MANAGER_DOCKER_USER: 'dockerhub/username',
-    SECRET_MANAGER_DOCKER_PWD: 'dockerhub/password',
+    SSM_DEV_APIGW_ENDPOINT: `${SSM_DEV_BASE}/api-gateway/endpointUrl`,
+    SSM_DEV_APIGW_KEY: `${SSM_DEV_BASE}/api-gateway/apikey`,
+    SSM_GITHUB_OAUTH: `/${APP_NAME}/github/oauth`,
+    SSM_DOCKER_USER: `/${APP_NAME}/dockerhub/user`,
+    SSM_DOCKER_PWD: `/${APP_NAME}/dockerhub/pwd`,
+    SSM_DEVACCOUNT: `/${APP_NAME}/account/dev`,
+    SSM_PRODACCOUNT: `/${APP_NAME}/account/prod`,
+    SSM_ORGID: `/${APP_NAME}/account/orgId`,
+    SSM_ORGUNITID: `/${APP_NAME}/account/orgUnitId`,
+
+    // baston host option
+    EC2_KEY_PAIR: 'user1-key-pair',
 };

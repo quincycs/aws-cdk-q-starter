@@ -4,7 +4,7 @@ import PipelineStack from './PipelineStack';
 import MyService from './MyService';
 import config from './config';
 
-const { DEV_MODE, DEV_MODE_ENV_NAME, DEV_MODE_COMPUTE_NAME, API_SRC_DIR } = config;
+const { DEV_MODE, DEV_MODE_ENV_NAME, DEV_MODE_COMPUTE_NAME, API_SRC_DIR, DEFAULT_REGION } = config;
 const tags = {
   "product": "cdk-q-starter"
 };
@@ -21,7 +21,10 @@ if (DEV_MODE) {
 } else {
   new PipelineStack(app, 'deployment-code-pipeline', {
     fargateAppSrcDir: API_SRC_DIR,
-    tags
+    tags,
+    env: {
+      region: DEFAULT_REGION
+    }
   });
 }
 app.synth();

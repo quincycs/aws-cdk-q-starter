@@ -4,6 +4,7 @@ import * as apigw from 'aws-cdk-lib/aws-apigateway';
 
 import config from './config';
 import { getContext } from './contextConfig';
+import { genComputeDNS } from './utils';
 
 const {
   SSM_APIGW_ID,
@@ -29,7 +30,7 @@ export default class MyApiGatewayStack extends cdk.Stack {
     api: apigw.IRestApi,
     vpcLink: apigw.VpcLink
   ): apigw.Method[] {
-    const { computeDNS } = getContext();
+    const computeDNS = genComputeDNS(this);
     const allMethods: apigw.Method[] = [];
     
     /*

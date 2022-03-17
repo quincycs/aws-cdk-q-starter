@@ -8,18 +8,19 @@ import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import { AdjustmentType } from 'aws-cdk-lib/aws-applicationautoscaling';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { NetworkLoadBalancer, NetworkTargetGroup, Protocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { HostedZone } from 'aws-cdk-lib/aws-route53';
+import { HostedZone, IHostedZone } from 'aws-cdk-lib/aws-route53';
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
 
 import { NetworkLoadBalancedFargateService } from './lib/network-load-balanced-fargate-service';
 import { NetworkLoadBalancedTaskImageOptions } from './lib/network-load-balanced-service-base';
 import config from './config';
 import { getContext } from './contextConfig';
+import { genComputeDNS } from './utils';
 
 const {
   DEFAULT_REGION,
-  R53_PRIV_ZONE_ID,
-  R53_PRIV_ZONE_NAME,
+  SSM_R53_PRIV_ZONE_ID,
+  SSM_R53_PRIV_ZONE_NAME,
   SSM_TLS_PRIV_KEY,
   SSM_ACM_CERT_ARN
 } = config;
@@ -62,14 +63,11 @@ export default class MyComputeStack extends cdk.Stack {
     codeImage: ecs.ContainerImage,
     dyTable: dynamodb.Table
   ): NetworkLoadBalancedFargateService {
-    const { computeDNS } = getContext();
-
-    const domainZone = HostedZone.fromHostedZoneAttributes(this, 'HostedZone', {
-      hostedZoneId: R53_PRIV_ZONE_ID,
-      zoneName: R53_PRIV_ZONE_NAME
-    });
+    const { envName } = getContext();
+    const computeDNS = genComputeDNS(this);
+    const domainZone = this.genDomainZone();
     const loadBalancerCertArnParam = StringParameter.fromStringParameterAttributes(this, 'lbCertArn', {
-      parameterName: SSM_ACM_CERT_ARN,
+      parameterName: SSM_ACM_CERT_ARN.replace("{envName}", envName),
     });
 
     // Create a cluster
@@ -121,10 +119,26 @@ export default class MyComputeStack extends cdk.Stack {
     return fargateService;
   }
 
+  private genDomainZone() : IHostedZone {
+    const { envName } = getContext();
+
+    const privateZoneIdParam = StringParameter.fromStringParameterAttributes(this, 'privateZoneIdParam', {
+      parameterName: SSM_R53_PRIV_ZONE_ID.replace('{envName}', envName),
+    });
+    const privateZoneNameParam = StringParameter.fromStringParameterAttributes(this, 'privateZoneNameParam', {
+      parameterName: SSM_R53_PRIV_ZONE_NAME.replace('{envName}', envName),
+    });
+    return HostedZone.fromHostedZoneAttributes(this, 'HostedZone', {
+      hostedZoneId: privateZoneIdParam.stringValue,
+      zoneName: privateZoneNameParam.stringValue
+    });
+  }
+
   private genFargateTaskImageOptions(
     codeImage: ecs.ContainerImage,
     dyTable: dynamodb.Table
   ): NetworkLoadBalancedTaskImageOptions {
+    const { envName } = getContext();
 
     // STDOUT/STDERR application logs
     const logDriver = ecs.LogDrivers.awsLogs({
@@ -134,8 +148,7 @@ export default class MyComputeStack extends cdk.Stack {
 
     // Container needs private key to decrypt self-signed TLS traffic
     const tlsPrivateKeySecret = StringParameter.fromSecureStringParameterAttributes(this, 'privateKeySecret', {
-      parameterName: SSM_TLS_PRIV_KEY,
-      version: 1
+      parameterName: SSM_TLS_PRIV_KEY.replace('{envName}', envName)
     });
 
     return {

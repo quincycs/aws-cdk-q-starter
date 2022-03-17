@@ -11,17 +11,23 @@ import { CodePipeline } from 'aws-cdk-lib/pipelines';
 
 import MyService from './MyService';
 import config from './config';
+import { Effect, PolicyStatement, StarPrincipal } from 'aws-cdk-lib/aws-iam';
 
 const {
   APP_NAME,
   GITHUB_OWNER,
   GITHUB_REPO,
   GITHUB_REPO_BRANCH,
-  SECRET_MANAGER_GITHUB_AUTH,
-  SECRET_MANAGER_DOCKER_USER,
-  SECRET_MANAGER_DOCKER_PWD,
+  DEFAULT_REGION,
+  SSM_GITHUB_OAUTH,
+  SSM_DOCKER_USER,
+  SSM_DOCKER_PWD,
   SSM_DEV_APIGW_ENDPOINT,
-  SSM_DEV_APIGW_KEY
+  SSM_DEV_APIGW_KEY,
+  SSM_DEVACCOUNT,
+  SSM_PRODACCOUNT,
+  SSM_ORGID,
+  SSM_ORGUNITID
 } = config;
 
 interface PipelineStackProps extends cdk.StackProps {
@@ -36,11 +42,13 @@ export default class PipelineStack extends cdk.Stack {
     super(scope, id, props);
     const { tags, fargateAppSrcDir } = props;
 
+    const devAccount = cdk.SecretValue.ssmSecure(SSM_DEVACCOUNT).toString();
+    const prodAccount = cdk.SecretValue.ssmSecure(SSM_PRODACCOUNT).toString();
     const ecrRepoName = `aws-cdk-q-starter/${fargateAppSrcDir}/app`;
 
     // self mutating pipeline for /cdk-app
     const sourceInput = pipelines.CodePipelineSource.gitHub(`${GITHUB_OWNER}/${GITHUB_REPO}`, GITHUB_REPO_BRANCH, {
-      authentication: cdk.SecretValue.secretsManager(SECRET_MANAGER_GITHUB_AUTH),
+      authentication: cdk.SecretValue.ssmSecure(SSM_GITHUB_OAUTH),
     })
     const pipeline = this.genPipelineDefinition(sourceInput);
 
@@ -52,7 +60,11 @@ export default class PipelineStack extends cdk.Stack {
       envName: 'dev',
       computeName: 'compute',
       ecrRepoName: ecrRepoName,
-      tags
+      tags,
+      env: {
+        account: devAccount,
+        region: DEFAULT_REGION
+      }
     });
     this.addDevStageWithValidationStep(pipeline, devDeployStage);
 
@@ -61,7 +73,11 @@ export default class PipelineStack extends cdk.Stack {
       envName: 'prod',
       computeName: 'CANARY',
       ecrRepoName: ecrRepoName,
-      tags
+      tags,
+      env: {
+        account: prodAccount,
+        region: DEFAULT_REGION
+      }
     });
     pipeline.addStage(prodCanaryDeployStage, {
       pre: [
@@ -76,7 +92,11 @@ export default class PipelineStack extends cdk.Stack {
       envName: 'prod',
       computeName: 'compute',
       ecrRepoName: ecrRepoName,
-      tags
+      tags,
+      env: {
+        account: prodAccount,
+        region: DEFAULT_REGION
+      }
     });
     pipeline.addStage(prodDeployStage, {
       pre: [
@@ -126,7 +146,7 @@ export default class PipelineStack extends cdk.Stack {
     sourceInput: cdk.pipelines.IFileSetProducer
   ): CodePipeline {
     return new CodePipeline(this, 'CdkPipeline', {
-      crossAccountKeys: false,
+      crossAccountKeys: true,
       pipelineName: 'aws-cdk-q-starter',
       synth: new pipelines.ShellStep('Synth', {
         input: sourceInput,
@@ -147,6 +167,9 @@ export default class PipelineStack extends cdk.Stack {
     sourceInput: cdk.pipelines.IFileSetProducer,
     ecrRepoName: string
   ) {
+    const orgId = cdk.SecretValue.ssmSecure(SSM_ORGID).toString();
+    const orgUnitId = cdk.SecretValue.ssmSecure(SSM_ORGUNITID).toString();
+
     // create ECR to host built artifact
     const repository = new ecr.Repository(this, 'Repository', {
       repositoryName: ecrRepoName,
@@ -157,9 +180,28 @@ export default class PipelineStack extends cdk.Stack {
     });
     repository.grantPullPush(buildRole);
 
+    // grantPull for all AWS accounts in organizational unit
+    repository.addToResourcePolicy(new PolicyStatement({
+      sid: 'AllowPullForOrgUnit',
+      effect: Effect.ALLOW,
+      principals: [new StarPrincipal()],
+      actions: [
+        'ecr:BatchCheckLayerAvailability',
+        'ecr:BatchGetImage',
+        'ecr:DescribeImages',
+        'ecr:DescribeRepositories',
+        'ecr:GetDownloadUrlForLayer'
+      ],
+      conditions: {
+        'ForAnyValue:StringLike': {
+          'aws:PrincipalOrgPaths': `${orgId}/*/${orgUnitId}/*`
+        }
+      }
+    }))
+
     // create BuildSpec
-    const dockerUser = cdk.SecretValue.secretsManager(SECRET_MANAGER_DOCKER_USER);
-    const dockerPwd = cdk.SecretValue.secretsManager(SECRET_MANAGER_DOCKER_PWD);
+    const dockerUser = cdk.SecretValue.ssmSecure(SSM_DOCKER_USER);
+    const dockerPwd = cdk.SecretValue.ssmSecure(SSM_DOCKER_PWD);
     const buildSpec = codebuild.BuildSpec.fromObject({
       version: '0.2',
       phases: {

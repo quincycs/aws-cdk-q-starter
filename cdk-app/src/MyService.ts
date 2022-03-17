@@ -2,13 +2,13 @@ import { Construct } from 'constructs';
 
 import MyNetworkDataStack from './MyNetworkDataStack';
 import MyComputeStack from './MyComputeStack';
-import config from './config';
 import MyApiGatewayStack from './MyApiGatewayStack';
 import { setContext } from './contextConfig';
+import config from './config';
 // import MyDevServerStack from './MyDevserverStack';
 // import { EC2_KEY_PAIR } from './config';
 
-const { APP_NAME, R53_PRIV_ZONE_NAME } = config;
+const { APP_NAME } = config;
 
 interface MyServiceProps {
   envName: string;
@@ -27,17 +27,16 @@ export default class MyService extends Construct {
     const { envName, computeName, localAssetPath, ecrRepoName, tags } = props;
     setContext({
       envName,
-      computeName,
-      computeDNS: `${envName}-${APP_NAME}-${computeName}.${R53_PRIV_ZONE_NAME}`
+      computeName
     });
 
-    const dataStack = new MyNetworkDataStack(scope, 'data', {
+    const dataStack = new MyNetworkDataStack(this, 'data', {
       stackName: `${envName}-data`,
       description: 'Has no dependencies.',
       tags
     });
 
-    const computeStack = new MyComputeStack(scope, 'compute', {
+    const computeStack = new MyComputeStack(this, 'compute', {
       stackName: `${envName}-${APP_NAME}-${computeName}`,
       vpc: dataStack.Vpc,
       dyTable: dataStack.DyTable,
@@ -48,14 +47,14 @@ export default class MyService extends Construct {
     });
     computeStack.addDependency(dataStack);
 
-    const apiStack = new MyApiGatewayStack(scope, 'apigateway', {
+    const apiStack = new MyApiGatewayStack(this, 'apigateway', {
       stackName: `${envName}-apigateway`,
       vpcLink: computeStack.vpcLink,
       description: `Depends on stack: ${computeStack.stackName}`
     });
     apiStack.addDependency(computeStack);
 
-    // const devStack = new MyDevServerStack(scope, `${envName}-${APP_NAME}-user1-devserver`, {
+    // const devStack = new MyDevServerStack(this, `${envName}-${APP_NAME}-user1-devserver`, {
     //   vpc: dataStack.Vpc,
     //   dyTable: dataStack.DyTable,
     //   keyPairName: EC2_KEY_PAIR,
