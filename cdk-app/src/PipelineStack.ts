@@ -19,9 +19,9 @@ const {
   GITHUB_REPO,
   GITHUB_REPO_BRANCH,
   DEFAULT_REGION,
-  SSM_GITHUB_OAUTH,
+  SECRET_GITHUB_OAUTH,
   SSM_DOCKER_USER,
-  SSM_DOCKER_PWD,
+  SECRET_DOCKER_PWD,
   SSM_DEV_APIGW_ENDPOINT,
   SSM_DEV_APIGW_KEY,
   SSM_DEVACCOUNT,
@@ -48,7 +48,7 @@ export default class PipelineStack extends cdk.Stack {
 
     // self mutating pipeline for /cdk-app
     const sourceInput = pipelines.CodePipelineSource.gitHub(`${GITHUB_OWNER}/${GITHUB_REPO}`, GITHUB_REPO_BRANCH, {
-      authentication: cdk.SecretValue.ssmSecure(SSM_GITHUB_OAUTH),
+      authentication: cdk.SecretValue.secretsManager(SECRET_GITHUB_OAUTH),
     })
     const pipeline = this.genPipelineDefinition(sourceInput);
 
@@ -200,8 +200,8 @@ export default class PipelineStack extends cdk.Stack {
     }))
 
     // create BuildSpec
-    const dockerUser = cdk.SecretValue.ssmSecure(SSM_DOCKER_USER);
-    const dockerPwd = cdk.SecretValue.ssmSecure(SSM_DOCKER_PWD);
+    const dockerUser = cdk.aws_ssm.StringParameter.valueForStringParameter(this,SSM_DOCKER_USER);
+    const dockerPwd = cdk.SecretValue.secretsManager(SECRET_DOCKER_PWD);
     const buildSpec = codebuild.BuildSpec.fromObject({
       version: '0.2',
       phases: {
