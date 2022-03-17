@@ -42,8 +42,8 @@ export default class PipelineStack extends cdk.Stack {
     super(scope, id, props);
     const { tags, fargateAppSrcDir } = props;
 
-    const devAccount = cdk.SecretValue.ssmSecure(SSM_DEVACCOUNT).toString();
-    const prodAccount = cdk.SecretValue.ssmSecure(SSM_PRODACCOUNT).toString();
+    const devAccount = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_DEVACCOUNT);
+    const prodAccount = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_PRODACCOUNT);
     const ecrRepoName = `aws-cdk-q-starter/${fargateAppSrcDir}/app`;
 
     // self mutating pipeline for /cdk-app
@@ -167,8 +167,8 @@ export default class PipelineStack extends cdk.Stack {
     sourceInput: cdk.pipelines.IFileSetProducer,
     ecrRepoName: string
   ) {
-    const orgId = cdk.SecretValue.ssmSecure(SSM_ORGID).toString();
-    const orgUnitId = cdk.SecretValue.ssmSecure(SSM_ORGUNITID).toString();
+    const orgId = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_ORGID);
+    const orgUnitId = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_ORGUNITID);
 
     // create ECR to host built artifact
     const repository = new ecr.Repository(this, 'Repository', {
