@@ -23,7 +23,7 @@ if (DEV_MODE) {
     fargateAppSrcDir: API_SRC_DIR,
     tags,
     env: {
-      account: process.env.CDK_DEFAULT_ACCOUNT,
+      account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
       region: DEFAULT_REGION
     }
   });
