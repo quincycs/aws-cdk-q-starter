@@ -92,7 +92,7 @@ export default class MyComputeStack extends cdk.Stack {
       ],
 
       // initial scaling
-      desiredCount: 2,
+      desiredCount: 1, // TODO 2
       minHealthyPercent: 100,
       maxHealthyPercent: 300,
       
@@ -104,7 +104,7 @@ export default class MyComputeStack extends cdk.Stack {
       domainName: computeDNS,
 
       // health / recovery
-      circuitBreaker: { rollback: true },
+      // circuitBreaker: { rollback: true },
       healthCheck: {
         command: ['CMD-SHELL', 'curl -f -k https://localhost:8080/ || exit 1'],
         startPeriod: cdk.Duration.seconds(60)
@@ -184,8 +184,8 @@ export default class MyComputeStack extends cdk.Stack {
 
   private setFargateServiceAutoScaling(service: ecs.FargateService) {
     const scaling = service.autoScaleTaskCount({
-      minCapacity: 2,
-      maxCapacity: 6
+      minCapacity: 1, // TODO 2
+      maxCapacity: 2  // TODO 6
     });
     /*
         Scaling         -1          (no change)          +1       +3
