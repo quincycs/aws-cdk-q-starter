@@ -115,7 +115,7 @@ export default class MyComputeStack extends cdk.Stack {
     this.setFargateServiceAutoScaling(fargateService.service);
 
     // grants
-    tlsPrivateKeySecret.grantRead(fargateService.taskDefinition.taskRole);
+    tlsPrivateKeySecret.grantRead(fargateService.taskDefinition.obtainExecutionRole());
     fargateService.service.connections.allowFromAnyIpv4(ec2.Port.tcp(containerPort));
     dyTable.grantFullAccess(fargateService.taskDefinition.taskRole);
 
