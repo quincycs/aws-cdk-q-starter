@@ -4,7 +4,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 
 import config from './config';
-const { EC2_KEY_PAIR, DEFAULT_REGION, DEFAULT_NAT_IMAGE, RemovalPolicy } = config;
+const { DEFAULT_REGION, DEFAULT_NAT_IMAGE, RemovalPolicy } = config;
 
 /*
  * Defines the networking and data storage componentns
