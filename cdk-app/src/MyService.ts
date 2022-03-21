@@ -14,7 +14,7 @@ interface MyServiceProps {
   envName: string;
   computeName: string;
   localAssetPath?: string;
-  ecrRepoArn?: string;
+  ecrRepoUrl?: string;
   tags?: { [key: string]: string; };
 }
 
@@ -24,7 +24,7 @@ interface MyServiceProps {
 export default class MyService extends Construct {
   constructor(scope: Construct, id: string, props: MyServiceProps) {
     super(scope, id);
-    const { envName, computeName, localAssetPath, ecrRepoArn, tags } = props;
+    const { envName, computeName, localAssetPath, ecrRepoUrl, tags } = props;
     setContext({
       envName,
       computeName
@@ -41,7 +41,7 @@ export default class MyService extends Construct {
       vpc: dataStack.Vpc,
       dyTable: dataStack.DyTable,
       localAssetPath,
-      ecrRepoArn,
+      ecrRepoUrl,
       tags,
       description: `Depends on stack: ${dataStack.stackName}`
     });

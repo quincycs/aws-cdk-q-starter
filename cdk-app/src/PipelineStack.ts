@@ -45,7 +45,7 @@ export default class PipelineStack extends cdk.Stack {
     const devAccount = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_DEVACCOUNT);
     const prodAccount = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_PRODACCOUNT);
     const ecrRepoName = `aws-cdk-q-starter/${fargateAppSrcDir}/app`;
-    const ecrRepoArn = `arn:aws:ecr:${this.region}:${this.account}:${ecrRepoName}`;
+    const ecrRepoUrl = `${this.account}.dkr.ecr.${this.region}.amazonaws.com/${ecrRepoName}`;
 
     // self mutating pipeline for /cdk-app
     const sourceInput = pipelines.CodePipelineSource.gitHub(`${GITHUB_OWNER}/${GITHUB_REPO}`, GITHUB_REPO_BRANCH, {
@@ -61,7 +61,7 @@ export default class PipelineStack extends cdk.Stack {
     const devDeployStage = new DeployStage(this, `dev-${APP_NAME}-stage`, {
       envName: 'dev',
       computeName: 'compute',
-      ecrRepoArn,
+      ecrRepoUrl,
       tags,
       env: {
         account: devAccount,
@@ -74,7 +74,7 @@ export default class PipelineStack extends cdk.Stack {
     const prodCanaryDeployStage = new DeployStage(this, `canary-${APP_NAME}-stage`, {
       envName: 'prod',
       computeName: 'CANARY',
-      ecrRepoArn,
+      ecrRepoUrl,
       tags,
       env: {
         account: prodAccount,
@@ -93,7 +93,7 @@ export default class PipelineStack extends cdk.Stack {
     const prodDeployStage = new DeployStage(this, `prod-${APP_NAME}-stage`, {
       envName: 'prod',
       computeName: 'compute',
-      ecrRepoArn,
+      ecrRepoUrl,
       tags,
       env: {
         account: prodAccount,
@@ -270,19 +270,19 @@ export default class PipelineStack extends cdk.Stack {
 interface DeployStageProps extends cdk.StageProps {
   envName: string;
   computeName: string;
-  ecrRepoArn: string;
+  ecrRepoUrl: string;
   tags?: { [key: string]: string; };
 }
 
 class DeployStage extends cdk.Stage {
   constructor(scope: Construct, id: string, props: DeployStageProps) {
     super(scope, id, props);
-    const { tags, envName, computeName, ecrRepoArn } = props;
+    const { tags, envName, computeName, ecrRepoUrl } = props;
 
     new MyService(this, 'MyServiceApp', {
       envName,
       computeName,
-      ecrRepoArn,
+      ecrRepoUrl,
       tags
     });
   }

@@ -3,7 +3,6 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
-import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import { AdjustmentType } from 'aws-cdk-lib/aws-applicationautoscaling';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
@@ -16,6 +15,7 @@ import { NetworkLoadBalancedTaskImageOptions } from './lib/network-load-balanced
 import config from './config';
 import { getContext } from './contextConfig';
 import { genComputeDNS } from './utils';
+import { BasicContainerImage } from './lib/basic-container-image';
 
 const {
   DEFAULT_REGION,
@@ -30,7 +30,7 @@ interface MyComputeStackProps extends cdk.StackProps {
   vpc: ec2.Vpc;
   dyTable: dynamodb.Table;
   localAssetPath?: string;
-  ecrRepoArn?: string;
+  ecrRepoUrl?: string;
 }
 
 export default class MyComputeStack extends cdk.Stack {
@@ -39,15 +39,14 @@ export default class MyComputeStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: MyComputeStackProps) {
     super(scope, id, props);
-    const { vpc, dyTable, localAssetPath, ecrRepoArn } = props;
+    const { vpc, dyTable, localAssetPath, ecrRepoUrl } = props;
 
     // container image
     let codeImage: ecs.ContainerImage;
-    if (ecrRepoArn && localAssetPath) {
+    if (ecrRepoUrl && localAssetPath) {
       throw new Error('Ecr repo name or Local asset path is required, but not both');
-    } else if (ecrRepoArn) {
-      const repository = ecr.Repository.fromRepositoryArn(this, 'Repository', ecrRepoArn);
-      codeImage = ecs.ContainerImage.fromEcrRepository(repository, process.env.CODEBUILD_RESOLVED_SOURCE_VERSION);
+    } else if (ecrRepoUrl) {
+      codeImage = new BasicContainerImage(`${ecrRepoUrl}:${process.env.CODEBUILD_RESOLVED_SOURCE_VERSION}`);
     } else if (localAssetPath) {
       codeImage = ecs.ContainerImage.fromAsset(localAssetPath);
     } else {
