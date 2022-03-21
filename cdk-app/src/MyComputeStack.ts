@@ -68,10 +68,13 @@ export default class MyComputeStack extends cdk.Stack {
     const loadBalancerCertArnParam = StringParameter.fromStringParameterAttributes(this, 'lbCertArn', {
       parameterName: SSM_ACM_CERT_ARN.replace("{envName}", envName),
     });
+    const tlsPrivateKeySecret = StringParameter.fromSecureStringParameterAttributes(this, 'privateKeySecret', {
+      parameterName: SSM_TLS_PRIV_KEY.replace('{envName}', envName)
+    });
 
     // Create a cluster
     const cluster = new ecs.Cluster(this, 'MyCluster', { vpc });
-    const taskImageOptions = this.genFargateTaskImageOptions(codeImage, dyTable);
+    const taskImageOptions = this.genFargateTaskImageOptions(codeImage, dyTable, tlsPrivateKeySecret);
 
     const fargateService = new NetworkLoadBalancedFargateService(
       this, 'MyFargateService', {
@@ -112,6 +115,7 @@ export default class MyComputeStack extends cdk.Stack {
     this.setFargateServiceAutoScaling(fargateService.service);
 
     // grants
+    tlsPrivateKeySecret.grantRead(fargateService.taskDefinition.taskRole);
     fargateService.service.connections.allowFromAnyIpv4(ec2.Port.tcp(containerPort));
     dyTable.grantFullAccess(fargateService.taskDefinition.taskRole);
 
@@ -135,19 +139,13 @@ export default class MyComputeStack extends cdk.Stack {
 
   private genFargateTaskImageOptions(
     codeImage: ecs.ContainerImage,
-    dyTable: dynamodb.Table
+    dyTable: dynamodb.Table,
+    tlsPrivateKeySecret: cdk.aws_ssm.IStringParameter
   ): NetworkLoadBalancedTaskImageOptions {
-    const { envName } = getContext();
-
     // STDOUT/STDERR application logs
     const logDriver = ecs.LogDrivers.awsLogs({
       streamPrefix: 'my-fargate',
       logRetention: RetentionDays.ONE_WEEK
-    });
-
-    // Container needs private key to decrypt self-signed TLS traffic
-    const tlsPrivateKeySecret = StringParameter.fromSecureStringParameterAttributes(this, 'privateKeySecret', {
-      parameterName: SSM_TLS_PRIV_KEY.replace('{envName}', envName)
     });
 
     return {
@@ -160,6 +158,7 @@ export default class MyComputeStack extends cdk.Stack {
         AWS_DEFAULT_REGION: DEFAULT_REGION
       },
       secrets: {
+        // Container needs private key to decrypt self-signed TLS traffic
         tlsPrivateKey: ecs.Secret.fromSsmParameter(tlsPrivateKeySecret)
       }
     };
