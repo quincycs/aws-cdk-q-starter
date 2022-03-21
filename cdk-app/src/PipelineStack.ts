@@ -45,7 +45,7 @@ export default class PipelineStack extends cdk.Stack {
     const devAccount = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_DEVACCOUNT);
     const prodAccount = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_PRODACCOUNT);
     const ecrRepoName = `aws-cdk-q-starter/${fargateAppSrcDir}/app`;
-    const ecrRepoUrl = `https://${this.account}.dkr.ecr.${this.region}.amazonaws.com/${ecrRepoName}`;
+    const ecrRepoUrl = `${this.account}.dkr.ecr.${this.region}.amazonaws.com/${ecrRepoName}`;
 
     // self mutating pipeline for /cdk-app
     const sourceInput = pipelines.CodePipelineSource.gitHub(`${GITHUB_OWNER}/${GITHUB_REPO}`, GITHUB_REPO_BRANCH, {
