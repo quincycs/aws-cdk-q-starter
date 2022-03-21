@@ -45,6 +45,7 @@ export default class PipelineStack extends cdk.Stack {
     const devAccount = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_DEVACCOUNT);
     const prodAccount = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_PRODACCOUNT);
     const ecrRepoName = `aws-cdk-q-starter/${fargateAppSrcDir}/app`;
+    const ecrRepoArn = `arn:aws:ecr:${this.region}:${this.account}:${ecrRepoName}`;
 
     // self mutating pipeline for /cdk-app
     const sourceInput = pipelines.CodePipelineSource.gitHub(`${GITHUB_OWNER}/${GITHUB_REPO}`, GITHUB_REPO_BRANCH, {
@@ -53,13 +54,14 @@ export default class PipelineStack extends cdk.Stack {
     const pipeline = this.genPipelineDefinition(sourceInput);
 
     // unit tests would be ran inside Dockerfile (during docker build).
-    this.genBuildWave(fargateAppSrcDir, pipeline, sourceInput, ecrRepoName);
+    const ecrRepo = this.genEcrRepo(ecrRepoName);
+    this.addBuildWave(fargateAppSrcDir, pipeline, sourceInput, ecrRepo);
 
     // deploy dev + run integration tests.
     const devDeployStage = new DeployStage(this, `dev-${APP_NAME}-stage`, {
       envName: 'dev',
       computeName: 'compute',
-      ecrRepoName: ecrRepoName,
+      ecrRepoArn,
       tags,
       env: {
         account: devAccount,
@@ -72,7 +74,7 @@ export default class PipelineStack extends cdk.Stack {
     const prodCanaryDeployStage = new DeployStage(this, `canary-${APP_NAME}-stage`, {
       envName: 'prod',
       computeName: 'CANARY',
-      ecrRepoName: ecrRepoName,
+      ecrRepoArn,
       tags,
       env: {
         account: prodAccount,
@@ -91,7 +93,7 @@ export default class PipelineStack extends cdk.Stack {
     const prodDeployStage = new DeployStage(this, `prod-${APP_NAME}-stage`, {
       envName: 'prod',
       computeName: 'compute',
-      ecrRepoName: ecrRepoName,
+      ecrRepoArn,
       tags,
       env: {
         account: prodAccount,
@@ -173,26 +175,16 @@ export default class PipelineStack extends cdk.Stack {
       })
     });
   }
-
-  private genBuildWave(
-    dockerFolder: string,
-    pipeline: pipelines.CodePipeline,
-    sourceInput: cdk.pipelines.IFileSetProducer,
-    ecrRepoName: string
-  ) {
-    const orgId = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_ORGID);
-    const orgUnitId = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_ORGUNITID);
-
+  
+  private genEcrRepo(ecrRepoName: string) : ecr.Repository {
     // create ECR to host built artifact
     const repository = new ecr.Repository(this, 'Repository', {
       repositoryName: ecrRepoName,
       removalPolicy: cdk.RemovalPolicy.RETAIN // destroy would only work if you had a mechanism for emptying it also.
     });
-    const buildRole = new iam.Role(this, 'DockerBuildRole', {
-      assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com')
-    });
-    repository.grantPullPush(buildRole);
 
+    const orgId = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_ORGID);
+    const orgUnitId = cdk.aws_ssm.StringParameter.valueFromLookup(this, SSM_ORGUNITID);
     // grantPull for all AWS accounts in organizational unit
     repository.addToResourcePolicy(new PolicyStatement({
       sid: 'AllowPullForOrgUnit',
@@ -210,7 +202,21 @@ export default class PipelineStack extends cdk.Stack {
           'aws:PrincipalOrgPaths': `${orgId}/*/${orgUnitId}/*`
         }
       }
-    }))
+    }));
+    
+    return repository;
+  }
+
+  private addBuildWave(
+    dockerFolder: string,
+    pipeline: pipelines.CodePipeline,
+    sourceInput: cdk.pipelines.IFileSetProducer,
+    repository: ecr.Repository
+  ) {
+    const buildRole = new iam.Role(this, 'DockerBuildRole', {
+      assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com')
+    });
+    repository.grantPullPush(buildRole);
 
     // create BuildSpec
     const dockerUser = cdk.aws_ssm.StringParameter.valueForStringParameter(this,SSM_DOCKER_USER);
@@ -258,27 +264,25 @@ export default class PipelineStack extends cdk.Stack {
         })
       ]
     });
-
-    return repository;
   }
 }
 
 interface DeployStageProps extends cdk.StageProps {
   envName: string;
   computeName: string;
-  ecrRepoName: string;
+  ecrRepoArn: string;
   tags?: { [key: string]: string; };
 }
 
 class DeployStage extends cdk.Stage {
   constructor(scope: Construct, id: string, props: DeployStageProps) {
     super(scope, id, props);
-    const { tags, envName, computeName, ecrRepoName } = props;
+    const { tags, envName, computeName, ecrRepoArn } = props;
 
     new MyService(this, 'MyServiceApp', {
       envName,
       computeName,
-      ecrRepoName,
+      ecrRepoArn,
       tags
     });
   }

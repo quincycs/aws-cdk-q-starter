@@ -30,7 +30,7 @@ interface MyComputeStackProps extends cdk.StackProps {
   vpc: ec2.Vpc;
   dyTable: dynamodb.Table;
   localAssetPath?: string;
-  ecrRepoName?: string;
+  ecrRepoArn?: string;
 }
 
 export default class MyComputeStack extends cdk.Stack {
@@ -39,14 +39,14 @@ export default class MyComputeStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: MyComputeStackProps) {
     super(scope, id, props);
-    const { vpc, dyTable, localAssetPath, ecrRepoName } = props;
+    const { vpc, dyTable, localAssetPath, ecrRepoArn } = props;
 
     // container image
     let codeImage: ecs.ContainerImage;
-    if (ecrRepoName && localAssetPath) {
+    if (ecrRepoArn && localAssetPath) {
       throw new Error('Ecr repo name or Local asset path is required, but not both');
-    } else if (ecrRepoName) {
-      const repository = ecr.Repository.fromRepositoryName(this, 'Repository', ecrRepoName);
+    } else if (ecrRepoArn) {
+      const repository = ecr.Repository.fromRepositoryArn(this, 'Repository', ecrRepoArn);
       codeImage = ecs.ContainerImage.fromEcrRepository(repository, process.env.CODEBUILD_RESOLVED_SOURCE_VERSION);
     } else if (localAssetPath) {
       codeImage = ecs.ContainerImage.fromAsset(localAssetPath);
