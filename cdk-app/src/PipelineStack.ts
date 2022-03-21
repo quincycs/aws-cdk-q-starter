@@ -148,6 +148,19 @@ export default class PipelineStack extends cdk.Stack {
     return new CodePipeline(this, 'CdkPipeline', {
       crossAccountKeys: true,
       pipelineName: 'aws-cdk-q-starter',
+      synthCodeBuildDefaults: {
+        rolePolicy: [
+          new iam.PolicyStatement({
+            actions: ['sts:AssumeRole'],
+            resources: ['*'],
+            conditions: {
+              StringEquals: {
+                'iam:ResourceTag/aws-cdk:bootstrap-role': 'lookup',
+              },
+            },
+          })
+        ]
+      },
       synth: new pipelines.ShellStep('Synth', {
         input: sourceInput,
         primaryOutputDirectory: 'cdk-app/cdk.out',
@@ -176,7 +189,7 @@ export default class PipelineStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN // destroy would only work if you had a mechanism for emptying it also.
     });
     const buildRole = new iam.Role(this, 'DockerBuildRole', {
-      assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
+      assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com')
     });
     repository.grantPullPush(buildRole);
 
