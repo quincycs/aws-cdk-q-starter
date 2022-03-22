@@ -105,7 +105,7 @@ export default class MyComputeStack extends cdk.Stack {
       domainName: computeDNS,
 
       // health / recovery
-      // circuitBreaker: { rollback: true },
+      circuitBreaker: { rollback: true },
       healthCheck: {
         command: ['CMD-SHELL', 'curl -f -k https://localhost:8080/ || exit 1'],
         startPeriod: cdk.Duration.seconds(60)
