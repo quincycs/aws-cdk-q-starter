@@ -73,7 +73,7 @@ export default class MyApiGatewayStack extends cdk.Stack {
     });
     deployment.node.addDependency(...methods);
     
-    if (computeName.toLowerCase().includes('canary')) {
+    if (computeName.toLowerCase().includes('canary-disable')) {
       // canary deployment. stage deployment not provided. canary deployment updated.
       new apigw.CfnStage(this, 'Stage', {
         restApiId: api.restApiId,
