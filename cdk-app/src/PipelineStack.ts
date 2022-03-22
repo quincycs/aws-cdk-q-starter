@@ -191,6 +191,7 @@ export default class PipelineStack extends cdk.Stack {
       effect: Effect.ALLOW,
       principals: [new StarPrincipal()],
       actions: [
+        'ecr:GetAuthorizationToken',
         'ecr:BatchCheckLayerAvailability',
         'ecr:BatchGetImage',
         'ecr:DescribeImages',

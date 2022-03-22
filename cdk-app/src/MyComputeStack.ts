@@ -16,6 +16,7 @@ import config from './config';
 import { getContext } from './contextConfig';
 import { genComputeDNS } from './utils';
 import { BasicContainerImage } from './lib/basic-container-image';
+import { Policy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 const {
   DEFAULT_REGION,
@@ -115,7 +116,21 @@ export default class MyComputeStack extends cdk.Stack {
     this.setFargateServiceAutoScaling(fargateService.service);
 
     // grants
-    tlsPrivateKeySecret.grantRead(fargateService.taskDefinition.obtainExecutionRole());
+    const execRole = fargateService.taskDefinition.obtainExecutionRole();
+    execRole.attachInlinePolicy(new Policy(this, 'allowECR', {
+      statements: [new PolicyStatement({
+        sid: 'allowECR',
+        effect: cdk.aws_iam.Effect.ALLOW,
+        actions: [
+          'ecr:GetAuthorizationToken',
+          'ecr:BatchCheckLayerAvailability',
+          'ecr:GetDownloadUrlForLayer',
+          'ecr:BatchGetImage'
+        ],
+        resources: ['*']
+      })]
+    }));
+    tlsPrivateKeySecret.grantRead(execRole);
     fargateService.service.connections.allowFromAnyIpv4(ec2.Port.tcp(containerPort));
     dyTable.grantFullAccess(fargateService.taskDefinition.taskRole);
 
