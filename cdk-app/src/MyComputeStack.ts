@@ -93,7 +93,7 @@ export default class MyComputeStack extends cdk.Stack {
       ],
 
       // initial scaling
-      desiredCount: 1, // TODO 2
+      desiredCount: 2,
       minHealthyPercent: 100,
       maxHealthyPercent: 300,
       
@@ -199,8 +199,8 @@ export default class MyComputeStack extends cdk.Stack {
 
   private setFargateServiceAutoScaling(service: ecs.FargateService) {
     const scaling = service.autoScaleTaskCount({
-      minCapacity: 1, // TODO 2
-      maxCapacity: 2  // TODO 6
+      minCapacity: 2,
+      maxCapacity: 6
     });
     /*
         Scaling         -1          (no change)          +1       +3
