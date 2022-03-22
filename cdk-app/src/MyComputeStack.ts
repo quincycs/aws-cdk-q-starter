@@ -190,10 +190,12 @@ export default class MyComputeStack extends cdk.Stack {
 
   private setFargateTargetGroup(targetGroup: NetworkTargetGroup) {
     // "For the duration of the configured timeout, the load balancer will allow existing, in-flight requests made to an instance to complete, but it will not send any new requests to the instance." https://aws.amazon.com/blogs/aws/elb-connection-draining-remove-instances-from-service-with-care/
-    targetGroup.setAttribute("deregistration_delay.timeout_seconds", "60");
+    targetGroup.setAttribute("deregistration_delay.timeout_seconds", "10");
     targetGroup.configureHealthCheck({
       protocol: Protocol.TCP,
-      enabled: true
+      enabled: true,
+      healthyThresholdCount: 2,
+      interval: cdk.Duration.seconds(5)
     });
   }
 
