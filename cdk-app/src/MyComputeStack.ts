@@ -193,9 +193,7 @@ export default class MyComputeStack extends cdk.Stack {
     targetGroup.setAttribute("deregistration_delay.timeout_seconds", "10");
     targetGroup.configureHealthCheck({
       protocol: Protocol.TCP,
-      enabled: true,
-      healthyThresholdCount: 2,
-      interval: cdk.Duration.seconds(10)
+      enabled: true
     });
   }
 
