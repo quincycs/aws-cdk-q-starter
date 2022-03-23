@@ -195,7 +195,7 @@ export default class MyComputeStack extends cdk.Stack {
       protocol: Protocol.TCP,
       enabled: true,
       healthyThresholdCount: 2,
-      interval: cdk.Duration.seconds(5)
+      interval: cdk.Duration.seconds(10)
     });
   }
 
