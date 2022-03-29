@@ -87,7 +87,7 @@ export default class MyComputeStack extends cdk.Stack {
       memoryLimitMiB: 1024,
       capacityProviderStrategies: [
         {
-          capacityProvider: 'FARGATE_SPOT',
+          capacityProvider: 'FARGATE_SPOT', // this is using 100% spot instances to save $. To balance cost / risk, use a mix of spot & ondemand.
           weight: 1
         }
       ],

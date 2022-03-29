@@ -19,8 +19,8 @@ export default class MyNetworkDataStack extends cdk.Stack {
 
     this.Vpc = new ec2.Vpc(this, 'MyVpc', {
       maxAzs: 2,
-      natGateways: 1,
-      natGatewayProvider: this.getNatProvider(),
+      natGateways: 1, // for full availability, increase to match maxAZs.
+      natGatewayProvider: this.getNatInstanceProvider(), // for full availability , use default option.  NAT instance used to save $.
       cidr: '10.10.0.0/22',
       subnetConfiguration: [
         {
@@ -45,7 +45,7 @@ export default class MyNetworkDataStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'DynamoDB-TableName', { value: this.DyTable.tableName });
   }
 
-  private getNatProvider(): ec2.NatProvider {
+  private getNatInstanceProvider(): ec2.NatProvider {
     const natImage: { [region: string]: string } = {};
     natImage[DEFAULT_REGION] = DEFAULT_NAT_IMAGE;
 
