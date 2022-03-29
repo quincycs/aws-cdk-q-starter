@@ -73,7 +73,7 @@ This deploys a codepipeline that does a lot!
 1. Waits for a manual approval gate
 1. Deploys 100% to production
 
-Create Perimeter Resources
+Manually create a few resources
 
 1. AWS Organizations / AWS SSO / Multiple Accounts
 1. Route53 private hosted zone. Dev & Prod accounts.
