@@ -18,6 +18,8 @@ export default class MyNetworkDataStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    const vpceSubnetSelection = { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS };
+
     this.Vpc = new ec2.Vpc(this, 'MyVpc', {
       maxAzs: 2,
       natGateways: 1, // for full availability, increase to match maxAZs.
@@ -36,22 +38,37 @@ export default class MyNetworkDataStack extends cdk.Stack {
       gatewayEndpoints: {
         dbEndpoint: {
           service: ec2.GatewayVpcEndpointAwsService.DYNAMODB,
-          subnets: [
-            { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }
-          ]
+          subnets: [vpceSubnetSelection]
         }
       },
     });
     this.DyTable = this.genDyTableDefinition();
 
+    // https://aws.amazon.com/premiumsupport/knowledge-center/ecs-unable-to-pull-secrets/
+    // "Check your Amazon VPC endpoints"
     this.Vpc.addInterfaceEndpoint('SSM_VPCE', {
       service: InterfaceVpcEndpointAwsService.SSM,
-      subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }
+      subnets: vpceSubnetSelection
     });
 
     this.Vpc.addInterfaceEndpoint('ECR_VPCE', {
       service: InterfaceVpcEndpointAwsService.ECR,
-      subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }
+      subnets: vpceSubnetSelection
+    });
+
+    this.Vpc.addInterfaceEndpoint('ECRDK_VPCE', {
+      service: InterfaceVpcEndpointAwsService.ECR_DOCKER,
+      subnets: vpceSubnetSelection
+    });
+
+    this.Vpc.addInterfaceEndpoint('CloudWatch_VPCE', {
+      service: InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
+      subnets: vpceSubnetSelection
+    });
+
+    this.Vpc.addInterfaceEndpoint('S3_VPCE', {
+      service: InterfaceVpcEndpointAwsService.S3,
+      subnets: vpceSubnetSelection
     });
 
     new cdk.CfnOutput(this, 'DynamoDB-TableName', { value: this.DyTable.tableName });
