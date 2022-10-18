@@ -49,6 +49,11 @@ export default class MyNetworkDataStack extends cdk.Stack {
       subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }
     });
 
+    this.Vpc.addInterfaceEndpoint('ECR_VPCE', {
+      service: InterfaceVpcEndpointAwsService.ECR,
+      subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }
+    });
+
     new cdk.CfnOutput(this, 'DynamoDB-TableName', { value: this.DyTable.tableName });
   }
 
