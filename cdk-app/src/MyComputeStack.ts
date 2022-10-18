@@ -16,7 +16,7 @@ import config from './config';
 import { getContext } from './contextConfig';
 import { genComputeDNS } from './utils';
 import { BasicContainerImage } from './lib/basic-container-image';
-import { ManagedPolicy, Policy, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { Policy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 const {
   DEFAULT_REGION,
