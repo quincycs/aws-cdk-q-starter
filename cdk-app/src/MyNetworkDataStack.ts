@@ -4,7 +4,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 
 import config from './config';
-import { InterfaceVpcEndpointAwsService } from 'aws-cdk-lib/aws-ec2';
+import { GatewayVpcEndpointAwsService, InterfaceVpcEndpointAwsService } from 'aws-cdk-lib/aws-ec2';
 const { DEFAULT_REGION, DEFAULT_NAT_IMAGE, RemovalPolicy } = config;
 
 /*
@@ -35,12 +35,6 @@ export default class MyNetworkDataStack extends cdk.Stack {
           subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS
         },
       ],
-      gatewayEndpoints: {
-        dbEndpoint: {
-          service: ec2.GatewayVpcEndpointAwsService.DYNAMODB,
-          subnets: [vpceSubnetSelection]
-        }
-      },
     });
     this.DyTable = this.genDyTableDefinition();
 
@@ -50,25 +44,27 @@ export default class MyNetworkDataStack extends cdk.Stack {
       service: InterfaceVpcEndpointAwsService.SSM,
       subnets: vpceSubnetSelection
     });
-
     this.Vpc.addInterfaceEndpoint('ECR_VPCE', {
       service: InterfaceVpcEndpointAwsService.ECR,
       subnets: vpceSubnetSelection
     });
-
     this.Vpc.addInterfaceEndpoint('ECRDK_VPCE', {
       service: InterfaceVpcEndpointAwsService.ECR_DOCKER,
       subnets: vpceSubnetSelection
     });
-
     this.Vpc.addInterfaceEndpoint('CloudWatch_VPCE', {
       service: InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
       subnets: vpceSubnetSelection
     });
 
-    this.Vpc.addInterfaceEndpoint('S3_VPCE', {
-      service: InterfaceVpcEndpointAwsService.S3,
-      subnets: vpceSubnetSelection
+    // gateway endpoints
+    this.Vpc.addGatewayEndpoint('S3_VPCE', {
+      service: GatewayVpcEndpointAwsService.S3,
+      subnets: [vpceSubnetSelection]
+    });
+    this.Vpc.addGatewayEndpoint('DyDB_VPCE', {
+      service: GatewayVpcEndpointAwsService.DYNAMODB,
+      subnets: [vpceSubnetSelection]
     });
 
     new cdk.CfnOutput(this, 'DynamoDB-TableName', { value: this.DyTable.tableName });
