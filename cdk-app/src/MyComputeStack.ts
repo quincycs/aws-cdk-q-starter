@@ -16,7 +16,7 @@ import config from './config';
 import { getContext } from './contextConfig';
 import { genComputeDNS } from './utils';
 import { BasicContainerImage } from './lib/basic-container-image';
-import { Policy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { ManagedPolicy, Policy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 const {
   DEFAULT_REGION,
@@ -116,6 +116,7 @@ export default class MyComputeStack extends cdk.Stack {
     this.setFargateServiceAutoScaling(fargateService.service);
 
     // grants
+    fargateService.service.connections.allowFromAnyIpv4(ec2.Port.tcp(containerPort));
     const execRole = fargateService.taskDefinition.obtainExecutionRole();
     execRole.attachInlinePolicy(new Policy(this, 'allowECR', {
       statements: [new PolicyStatement({
@@ -130,9 +131,10 @@ export default class MyComputeStack extends cdk.Stack {
         resources: ['*']
       })]
     }));
-    tlsPrivateKeySecret.grantRead(fargateService.taskDefinition.taskRole);
-    fargateService.service.connections.allowFromAnyIpv4(ec2.Port.tcp(containerPort));
-    dyTable.grantFullAccess(fargateService.taskDefinition.taskRole);
+    execRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonECSTaskExecutionRolePolicy'));
+    // tlsPrivateKeySecret.grantRead(execRole); // already done for every secret by ecs-patterns.
+    const taskRole = fargateService.taskDefinition.taskRole;
+    dyTable.grantFullAccess(taskRole);
 
     return fargateService;
   }
