@@ -164,19 +164,19 @@ export default class MyComputeStack extends cdk.Stack {
       logRetention: RetentionDays.ONE_WEEK
     });
 
-    const ecsExecRole = new Role(this, 'FargateTaskExecutionServiceRole', {
-      assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
-      managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName('AmazonECSTaskExecutionRolePolicy')
-      ]
-    });
+    // const ecsExecRole = new Role(this, 'FargateTaskExecutionServiceRole', {
+    //   assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
+    //   managedPolicies: [
+    //     ManagedPolicy.fromAwsManagedPolicyName('AmazonECSTaskExecutionRolePolicy')
+    //   ]
+    // });
 
     return {
       enableLogging: true,
       logDriver,
       image: codeImage,
       containerPort,
-      executionRole: ecsExecRole,
+      // executionRole: ecsExecRole,
       environment: {
         dbTableName: dyTable.tableName,
         AWS_DEFAULT_REGION: DEFAULT_REGION

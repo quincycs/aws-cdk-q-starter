@@ -4,6 +4,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 
 import config from './config';
+import { InterfaceVpcEndpointAwsService } from 'aws-cdk-lib/aws-ec2';
 const { DEFAULT_REGION, DEFAULT_NAT_IMAGE, RemovalPolicy } = config;
 
 /*
@@ -29,19 +30,25 @@ export default class MyNetworkDataStack extends cdk.Stack {
         },
         {
           name: 'Private',
-          subnetType: ec2.SubnetType.PRIVATE_WITH_NAT
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS
         },
       ],
       gatewayEndpoints: {
         dbEndpoint: {
           service: ec2.GatewayVpcEndpointAwsService.DYNAMODB,
           subnets: [
-            { subnetType: ec2.SubnetType.PRIVATE_WITH_NAT }
+            { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }
           ]
         }
       },
     });
     this.DyTable = this.genDyTableDefinition();
+
+    this.Vpc.addInterfaceEndpoint('SSM_VPCE', {
+      service: InterfaceVpcEndpointAwsService.SSM,
+      subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }
+    });
+
     new cdk.CfnOutput(this, 'DynamoDB-TableName', { value: this.DyTable.tableName });
   }
 
