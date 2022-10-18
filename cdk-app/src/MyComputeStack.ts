@@ -130,7 +130,7 @@ export default class MyComputeStack extends cdk.Stack {
         resources: ['*']
       })]
     }));
-    tlsPrivateKeySecret.grantRead(execRole);
+    tlsPrivateKeySecret.grantRead(fargateService.taskDefinition.taskRole);
     fargateService.service.connections.allowFromAnyIpv4(ec2.Port.tcp(containerPort));
     dyTable.grantFullAccess(fargateService.taskDefinition.taskRole);
 
