@@ -71,23 +71,23 @@ export default class PipelineStack extends cdk.Stack {
     this.addDevStageWithValidationStep(pipeline, devDeployStage);
 
     // manual approval gate then deploy prod canary
-    const prodCanaryDeployStage = new DeployStage(this, `canary-${APP_NAME}-stage`, {
-      envName: 'prod',
-      computeName: 'CANARY',
-      ecrRepoUrl,
-      tags,
-      env: {
-        account: prodAccount,
-        region: DEFAULT_REGION
-      }
-    });
-    pipeline.addStage(prodCanaryDeployStage, {
-      pre: [
-        new pipelines.ManualApprovalStep('Approval', {
-          comment: "Production Canary Deploy @ 0% ?  Any existing canary will be replaced.  It is recommended to set the current canary to 0% before continuing.",
-        })
-      ]
-    });
+    // const prodCanaryDeployStage = new DeployStage(this, `canary-${APP_NAME}-stage`, {
+    //   envName: 'prod',
+    //   computeName: 'CANARY',
+    //   ecrRepoUrl,
+    //   tags,
+    //   env: {
+    //     account: prodAccount,
+    //     region: DEFAULT_REGION
+    //   }
+    // });
+    // pipeline.addStage(prodCanaryDeployStage, {
+    //   pre: [
+    //     new pipelines.ManualApprovalStep('Approval', {
+    //       comment: "Production Canary Deploy @ 0% ?  Any existing canary will be replaced.  It is recommended to set the current canary to 0% before continuing.",
+    //     })
+    //   ]
+    // });
 
     // manual approval gate then deploy fully to prod and reset canary to 0%.
     const prodDeployStage = new DeployStage(this, `prod-${APP_NAME}-stage`, {
