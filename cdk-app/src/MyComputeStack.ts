@@ -16,7 +16,7 @@ import config from './config';
 import { getContext } from './contextConfig';
 import { genComputeDNS } from './utils';
 import { BasicContainerImage } from './lib/basic-container-image';
-import { ManagedPolicy, Policy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { ManagedPolicy, Policy, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 
 const {
   DEFAULT_REGION,
@@ -131,7 +131,6 @@ export default class MyComputeStack extends cdk.Stack {
         resources: ['*']
       })]
     }));
-    execRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonECSTaskExecutionRolePolicy'));
     // tlsPrivateKeySecret.grantRead(execRole); // already done for every secret by ecs-patterns.
     const taskRole = fargateService.taskDefinition.taskRole;
     dyTable.grantFullAccess(taskRole);
@@ -165,11 +164,19 @@ export default class MyComputeStack extends cdk.Stack {
       logRetention: RetentionDays.ONE_WEEK
     });
 
+    const ecsExecRole = new Role(this, 'FargateTaskExecutionServiceRole', {
+      assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
+      managedPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName('AmazonECSTaskExecutionRolePolicy')
+      ]
+    });
+
     return {
       enableLogging: true,
       logDriver,
       image: codeImage,
       containerPort,
+      executionRole: ecsExecRole,
       environment: {
         dbTableName: dyTable.tableName,
         AWS_DEFAULT_REGION: DEFAULT_REGION
