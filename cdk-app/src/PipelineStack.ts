@@ -111,7 +111,7 @@ export default class PipelineStack extends cdk.Stack {
     pipeline.buildPipeline();//needed for below
     // additionally trigger a pipeline run once a week even without code changes.
     //    this is to keep the base docker image fresh with latest underlying improvements.
-    this.genPipelineScheduleRuleDefinition(pipeline);
+    // this.genPipelineScheduleRuleDefinition(pipeline);
   }
 
   private addDevStageWithValidationStep(
