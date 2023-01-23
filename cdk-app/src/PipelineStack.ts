@@ -1,12 +1,12 @@
 import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
-import { Duration } from 'aws-cdk-lib';
+//import { Duration } from 'aws-cdk-lib';
 import * as pipelines from 'aws-cdk-lib/pipelines';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as events from 'aws-cdk-lib/aws-events';
-import * as events_targets from 'aws-cdk-lib/aws-events-targets';
+//import * as events from 'aws-cdk-lib/aws-events';
+//import * as events_targets from 'aws-cdk-lib/aws-events-targets';
 import { CodePipeline } from 'aws-cdk-lib/pipelines';
 
 import MyService from './MyService';
