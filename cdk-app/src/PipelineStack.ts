@@ -134,7 +134,7 @@ export default class PipelineStack extends cdk.Stack {
     });
   }
 
-  private genPipelineScheduleRuleDefinition(
+/*  private genPipelineScheduleRuleDefinition(
     pipeline: pipelines.CodePipeline
   ): events.Rule {
     const rule = new events.Rule(this, 'Weekly', {
@@ -142,7 +142,7 @@ export default class PipelineStack extends cdk.Stack {
     });
     rule.addTarget(new events_targets.CodePipeline(pipeline.pipeline));
     return rule;
-  }
+  }*/
 
   private genPipelineDefinition(
     sourceInput: cdk.pipelines.IFileSetProducer
